@@ -45,6 +45,12 @@ volatile unsigned char *myUCSR0C = 0x00C2;
 volatile unsigned int *myUBRR0 = 0x00C4;
 volatile unsigned char *myUDR0 = 0x00C6;
 
+// ADC Pointers
+volatile unsigned char *my_ADMUX = (unsigned char *)0x7C;
+volatile unsigned char *my_ADCSRB = (unsigned char *)0x7B;
+volatile unsigned char *my_ADCSRA = (unsigned char *)0x7A;
+volatile unsigned int *my_ADC_DATA = (unsigned int *)0x78;
+
 /*
 //timer Pointers
 volatile unsigned char *myTCCR1A = (unsigned char *) 0x80;
