@@ -6,6 +6,9 @@
 #include <LiquidCrystal.h>
 #include <DHT11.h>
 
+#define RDA 0x80
+#define TBE 0x20
+
 // set up LCD pins
 const int RS = 13, EN = 12, D4 = 11, D5 = 10, D6 = 9, D7 = 8;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
@@ -61,8 +64,9 @@ void loop()
   // put your main code here, to run repeatedly:
   lcdDisplay(); // display the temperature and humidity
 
-  getWaterLevel(); // get the water level
+  // getWaterLevel(); // get the water level
   // if water level is good
+  /*
   if (waterLevel == 1)
   {
     // turn motor on
@@ -72,6 +76,7 @@ void loop()
   {
     // turn motor off
   }
+  */
 }
 
 void lcdDisplay()
@@ -183,14 +188,17 @@ void U0Init(int U0baud)
   *myUCSR0C = 0x06;
   *myUBRR0 = tbaud;
 }
+
 unsigned char kbhit()
 {
   return *myUCSR0A & RDA;
 }
+
 unsigned char getChar()
 {
   return *myUDR0;
 }
+
 void putChar(unsigned char U0pdata)
 {
   while ((*myUCSR0A & TBE) == 0)
