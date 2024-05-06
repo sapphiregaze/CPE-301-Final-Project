@@ -22,7 +22,10 @@ volatile unsigned char* ddr_b = (unsigned char*) 0x24
 /*
 //set up water sensor pin and define water level variable
 const int waterSensor = 48; //Port L, bit 1 (PL1)
-volatile int waterLevel = 0;
+volatile int waterValue = 0;
+int waterLevel;
+#define WATER_LEVEL_MIN 0
+#define WATER_LEVEL_MAX 521 //TEMP
 */
 
 // UART Pointers
@@ -131,7 +134,8 @@ ISR(TIMER1_OVF_vect)
 void getWaterLevel()
 {
   //this function reads the water sensor
-  waterLevel = (pinl >> PL1) & 0x01; //mask
+  waterValue = (pinl >> PL1) & 0x01; //mask
+  waterLevel = map(value, WATER_LEVEL_MIN, WATER_LEVEL_MAX, 0, 4); // 4 levels also need to setup max macro
 }
 */
 /* THIS IS WRONG
