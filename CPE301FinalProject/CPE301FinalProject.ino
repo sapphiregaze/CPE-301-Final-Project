@@ -191,7 +191,7 @@ void getWaterLevel()
   Serial.println(waterLevel);
 }
 
-void statusLED(status)
+void statusLED(int statusLight)
 {
   //this function sets up the status LEDs
 
@@ -203,22 +203,22 @@ void statusLED(status)
   *ddr_b |= 0x0F; //set pins PB0-PB3 as outputs
   *port_b |= 0x0F; //set pins PB0-PB3 to enable pullup
 
-  if (status == 1) //disabled
+  if (statusLight == 1) //disabled
   {
     // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB0 high (yellow)
     *port_b |= (*port_b & 0xF0) | 0x01;
   }
-  else if (status == 2) //idle
+  else if (statusLight == 2) //idle
   {
     // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB1 high (green)
     *port_b |= (*port_b & 0xF0) | 0x02;
   }
-  else if (status == 3) //running
+  else if (statusLight == 3) //running
   {
     // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB2 high (blue)
     *port_b |= (*port_b & 0xF0) | 0x04;
   }
-  else if (status == 4) //error
+  else if (statusLight == 4) //error
   {
     // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB3 high (red)
     *port_b |= (*port_b & 0xF0) | 0x08;
