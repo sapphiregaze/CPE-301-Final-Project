@@ -54,6 +54,14 @@ volatile unsigned char *my_ADCSRB = (unsigned char *)0x7B;
 volatile unsigned char *my_ADCSRA = (unsigned char *)0x7A;
 volatile unsigned int *my_ADC_DATA = (unsigned int *)0x78;
 
+//timer Pointers
+volatile unsigned char *myTCCR1A = (unsigned char *) 0x80;
+volatile unsigned char *myTCCR1B = (unsigned char *) 0x81;
+volatile unsigned char *myTCCR1C = (unsigned char *) 0x82;
+volatile unsigned char *myTIMSK1 = (unsigned char *) 0x6F;
+volatile unsigned char *myTIFR1 =  (unsigned char *) 0x36;
+volatile unsigned int  *myTCNT1  = (unsigned  int *) 0x84;
+
 void setup()
 {
   // put your setup code here, to run once:
@@ -183,7 +191,7 @@ void statusLED(int statusLight)
   }
 }
 
-
+//ADC functions
 void adc_init()
 {
   // setup the A register
@@ -200,7 +208,6 @@ void adc_init()
   *my_ADMUX &= 0b11011111; // clear bit 5 to 0 for right adjust result
   *my_ADMUX &= 0b11100000; // clear bit 4-0 to 0 to reset the channel and gain bits
 }
-
 unsigned int adc_read(unsigned char adc_channel_num)
 {
   // clear the channel selection bits (MUX 4:0)
@@ -226,6 +233,35 @@ unsigned int adc_read(unsigned char adc_channel_num)
   return *my_ADC_DATA;
 }
 
+//timer setup function
+void setup_timer_regs()
+{
+  //set up the timer control registers
+  *myTCCR1A= 0x00;
+  *myTCCR1B= 0X00;
+  *myTCCR1C= 0x00;
+  //reset the TOV flag
+  *myTIFR1 |= 0x01;
+  //enable the TOV interrupt
+  *myTIMSK1 |= 0x01;
+}
+//timer overflow ISR
+ISR(TIMER1_OVF_vect)
+{
+  //Stop the Timer
+  *myTCCR1B &= 0xF8;
+  //Load the Count
+  *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
+  //Start the Timer
+  *myTCCR1B |= 0b00000001;
+  //if it's not the STOP amount
+  if(currentTicks != 65535)
+  {
+    //XOR to toggle PB6
+    *portB ^= 0x40;
+  }
+}
+
 // UART functions
 void U0Init(int U0baud)
 {
@@ -238,17 +274,14 @@ void U0Init(int U0baud)
   *myUCSR0C = 0x06;
   *myUBRR0 = tbaud;
 }
-
 unsigned char U0kbhit()
 {
   return *myUCSR0A & RDA;
 }
-
 unsigned char U0getchar()
 {
   return *myUDR0;
 }
-
 void U0putchar(unsigned char U0pdata)
 {
   while ((*myUCSR0A & TBE) == 0)
