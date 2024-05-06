@@ -6,6 +6,7 @@
 #include <LiquidCrystal.h>
 #include <DHT11.h>
 #include <Stepper.h>
+#include <Clock.h>
 
 #define RDA 0x80
 #define TBE 0x20
@@ -59,6 +60,7 @@ void setup()
   // put your setup code here, to run once:
   U0Init(9600);
   lcd.begin(16, 2); // set up number of columns and rows
+  MyClock.Init();
   // setup the Timer for Normal Mode, with the TOV interrupt enabled
   // setup_timer_regs();
   // start the UART
