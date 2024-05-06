@@ -23,12 +23,10 @@ volatile unsigned char* port_b = (unsigned char*) 0x25
 volatile unsigned char* ddr_b = (unsigned char*) 0x24
 */
 
-/*
-//set up motor
+// set up motor
 const int stepsPerRevolution = 2038;
-/ Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
-Stepper myStepper = Stepper(stepsPerRevolution, x, x, x, x);
-*/
+// Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
+Stepper myStepper = Stepper(stepsPerRevolution, 1, 3, 2, 4);
 
 /*
 //set up water sensor pin and define water level variable
@@ -77,12 +75,13 @@ void loop()
   /*
   if (waterLevel == 1)
   {
-    //motor function call
+    // get button input (either 1 or -1)
+    Motor(false, button input);
   }
   // if water level is too low
   else
   {
-    //motor function call
+    Motor(true, 0);
   }
   */
 }
@@ -144,19 +143,22 @@ ISR(TIMER1_OVF_vect)
 }
 */
 
-void Motor(bool onOff, int direction) {
-  if(onOff) {
+void Motor(bool onOff, int direction)
+{
+  if (onOff)
+  {
     myStepper.setSpeed(5); // arbitrary speed in rpm
     myStepper.step(stepsPerRevolution * direction);
-    //maybe delay here
+    // maybe delay here
   }
-  else {
-    myStepper.setSpeed(0); //I think this turns it off (sets rpm to zero)
+  else
+  {
+    myStepper.setSpeed(0);              // I think this turns it off (sets rpm to zero)
     myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
-    //maybe delay here
+    // maybe delay here
   }
-  //a positive stepsPerRevolution is clockwise and negative is counter clockwise
-  //essentially have direction be 1 for clockwise and -1 for counterclockwise
+  // a positive stepsPerRevolution is clockwise and negative is counter clockwise
+  // essentially have direction be 1 for clockwise and -1 for counterclockwise
 }
 
 /*
@@ -167,6 +169,7 @@ void getWaterLevel()
   waterLevel = map(value, WATER_LEVEL_MIN, WATER_LEVEL_MAX, 0, 4); // 4 levels also need to setup max macro
 }
 */
+
 /* THIS IS WRONG
 void LED()
 {
