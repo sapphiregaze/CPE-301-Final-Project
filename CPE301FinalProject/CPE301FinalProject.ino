@@ -88,7 +88,7 @@ void loop()
     if (!motorState)
     {
       motorState = true;
-      // prints out state change
+      outputStateChange("Motor is on ");
     }
   }
   // if water level is too low
@@ -98,7 +98,7 @@ void loop()
     if (motorState)
     {
       motorState = false;
-      // prints out state change
+      outputStateChange("Motor is off ");
     }
   }
 }
@@ -287,12 +287,15 @@ unsigned char U0getchar()
 
 void U0putchar(unsigned char U0pdata)
 {
-  while ((*myUCSR0A & TBE) == 0);
+  while ((*myUCSR0A & TBE) == 0)
+    ;
   *myUDR0 = U0pdata;
 }
 
-void outputStateChange(String state) {
-  for(int i = 0; i < state.size(); i++) {
+void outputStateChange(String state)
+{
+  for (int i = 0; i < state.length(); i++)
+  {
     U0putchar(state[i]);
   }
   U0putchar(' ');
@@ -301,17 +304,20 @@ void outputStateChange(String state) {
   String hour = MyClock.Hour();
   String minute = MyClock.Minute();
 
-  for(int i = 0; i < date.size(); i++) {
+  for (int i = 0; i < date.length(); i++)
+  {
     U0putchar(state[i]);
   }
   U0putchar(' ');
 
-  for(int i = 0; i < Hour.size(); i++) {
+  for (int i = 0; i < Hour.length(); i++)
+  {
     U0putchar(state[i]);
   }
   U0putchar(':');
 
-  for(int i = 0; i < minute.size(); i++) {
+  for (int i = 0; i < minute.length(); i++)
+  {
     U0putchar(state[i]);
   }
   U0putchar('\n');
