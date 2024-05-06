@@ -67,19 +67,21 @@ void setup()
   // put your setup code here, to run once:
   U0Init(9600);
   adc_init();
-  lcd.begin(16, 2); // set up number of columns and rows
   MyClock.Init();
-  status = 1; //system is idle, yellow LED should be on
+  lcd.begin(16, 2); // set up number of columns and rows
+  status = 1; // system is disabled, yellow LED should be on
   statusLED(status);
-  // setup the Timer for Normal Mode, with the TOV interrupt enabled
-  // setup_timer_regs();
 }
 
 void loop()
 {
   // put your main code here, to run repeatedly:
+  //
+  // if start button pressed
+  //
+  status = 2; // system idle, green LED should be 
+  statusLED(status);
   lcdDisplay(); // display the temperature and humidity
-
   getWaterLevel(); // get the water level
   // if water level is good
 
@@ -104,6 +106,11 @@ void loop()
       outputStateChange(String("Motor is off "));
     }
   }
+  //
+  // if stop button pressed
+  //
+  status = 1; //system disabled, yellow LED should be on
+  statusLED(status);
 }
 
 void lcdDisplay()
