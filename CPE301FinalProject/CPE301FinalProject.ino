@@ -14,6 +14,8 @@
 const int RS = 13, EN = 12, D4 = 11, D5 = 10, D6 = 9, D7 = 8;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
 
+bool motorState = false;
+
 // set up DHT pins
 DHT11 dht11(7); // DHT sensor connected to digital pin 7
 
@@ -76,12 +78,24 @@ void loop()
   if (waterLevel == 1)
   {
     // get button input (either 1 or -1)
+
+
     Motor(false, button input);
+    if (!motorState)
+    {
+      motorState = true;
+      // prints out state change
+    }
   }
   // if water level is too low
   else
   {
     Motor(true, 0);
+    if (motorState)
+    {
+      motorState = false;
+      // prints out state change
+    }
   }
   */
 }
@@ -216,17 +230,15 @@ void U0Init(int U0baud)
   *myUBRR0 = tbaud;
 }
 
-unsigned char kbhit()
+unsigned char U0kbhit()
 {
   return *myUCSR0A & RDA;
 }
-
-unsigned char getChar()
+unsigned char U0getchar()
 {
   return *myUDR0;
 }
-
-void putChar(unsigned char U0pdata)
+void U0putchar(unsigned char U0pdata)
 {
   while ((*myUCSR0A & TBE) == 0)
     ;
