@@ -6,7 +6,7 @@
 #include <LiquidCrystal.h>
 #include <DHT11.h>
 #include <Stepper.h>
-#include <Clock.h>
+// #include <Clock.h>
 
 #define RDA 0x80
 #define TBE 0x20
@@ -66,11 +66,9 @@ void setup()
   // put your setup code here, to run once:
   U0Init(9600);
   lcd.begin(16, 2); // set up number of columns and rows
-  MyClock.Init();
+  // MyClock.Init();
   // setup the Timer for Normal Mode, with the TOV interrupt enabled
   // setup_timer_regs();
-  // start the UART
-  // U0Init(9600);
 }
 
 void loop()
@@ -81,11 +79,11 @@ void loop()
   getWaterLevel(); // get the water level
   // if water level is good
 
-  if (waterLevel == 1)
+  if (waterLevel >= 2)
   {
     // get button input (either 1 or -1)
 
-    Motor(false, 1);
+    Motor(true, 1);
     if (!motorState)
     {
       motorState = true;
@@ -95,7 +93,7 @@ void loop()
   // if water level is too low
   else
   {
-    Motor(true, 0);
+    Motor(false, 0);
     if (motorState)
     {
       motorState = false;
@@ -161,9 +159,9 @@ ISR(TIMER1_OVF_vect)
 }
 */
 
-void Motor(bool onOff, int direction)
+void Motor(bool isOn, int direction)
 {
-  if (onOff)
+  if (isOn)
   {
     myStepper.setSpeed(5); // arbitrary speed in rpm
     myStepper.step(stepsPerRevolution * direction);
