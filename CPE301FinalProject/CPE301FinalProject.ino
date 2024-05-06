@@ -8,8 +8,12 @@
 #include <Stepper.h>
 #include <Clock.h>
 
+// macros
 #define RDA 0x80
 #define TBE 0x20
+
+#define WATER_LEVEL_MIN 0
+#define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
 
 // set up LCD pins
 const int RS = 13, EN = 12, D4 = 11, D5 = 10, D6 = 9, D7 = 8;
@@ -34,11 +38,8 @@ Stepper myStepper = Stepper(stepsPerRevolution, 1, 3, 2, 4);
 volatile int waterValue = 0;
 int waterLevel = 0;
 
-//set up LED status
+// initialize LED status
 int status = 0;
-
-#define WATER_LEVEL_MIN 0
-#define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
 
 // UART Pointers
 volatile unsigned char *myUCSR0A = 0x00C0;
@@ -150,15 +151,15 @@ void getWaterLevel()
 
 void statusLED(int statusLight)
 {
-  //this function sets up the status LEDs
+  // this function sets up the status LEDs
 
-  //YELLOW - PB0, pin 53
-  //GREEN - PB1, pin 52
-  //BLUE - PB2, pin 51
-  //RED - PB3, pin 50
+  // YELLOW - PB0, pin 53, DISABLED
+  // GREEN - PB1, pin 52, IDLE
+  // BLUE - PB2, pin 51, RUNNING
+  // RED - PB3, pin 50, ERROR
 
-  *ddr_b |= 0x0F; //set pins PB0-PB3 as outputs
-  *port_b |= 0x0F; //set pins PB0-PB3 to enable pullup
+  *ddr_b |= 0x0F; // set pins PB0-PB3 as outputs
+  *port_b |= 0x0F; // set pins PB0-PB3 to enable pullup
 
   if (statusLight == 1) //disabled
   {
