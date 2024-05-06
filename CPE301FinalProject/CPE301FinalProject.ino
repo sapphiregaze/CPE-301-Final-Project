@@ -20,11 +20,10 @@ bool motorState = false;
 // set up DHT pins
 DHT11 dht11(7); // DHT sensor connected to digital pin 7
 
-/*THESE ARE WRONG FIX THESE
-//define pointers for port D, used for LEDs
-volatile unsigned char* port_b = (unsigned char*) 0x25
-volatile unsigned char* ddr_b = (unsigned char*) 0x24
-*/
+//define pointers for port B, used for LEDs
+volatile unsigned char* port_b = (unsigned char*) 0x25;
+volatile unsigned char* ddr_b = (unsigned char*) 0x24;
+
 
 // set up motor
 const int stepsPerRevolution = 2038;
@@ -34,6 +33,9 @@ Stepper myStepper = Stepper(stepsPerRevolution, 1, 3, 2, 4);
 // set up water sensor pin and define water level variable
 volatile int waterValue = 0;
 int waterLevel = 0;
+
+//set up LED status
+int status = 0;
 
 #define WATER_LEVEL_MIN 0
 #define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
@@ -68,6 +70,8 @@ void setup()
   adc_init();
   lcd.begin(16, 2); // set up number of columns and rows
   MyClock.Init();
+  status = 1; //system is idle, yellow LED should be on
+  statusLED(status);
   // setup the Timer for Normal Mode, with the TOV interrupt enabled
   // setup_timer_regs();
 }
@@ -187,7 +191,7 @@ void getWaterLevel()
   Serial.println(waterLevel);
 }
 
-void LED(status)
+void statusLED(status)
 {
   //this function sets up the status LEDs
 
@@ -196,24 +200,28 @@ void LED(status)
   //BLUE - PB2, pin 51
   //RED - PB3, pin 50
 
-  *ddr_d |= 0x0F; //set pins PD0-PD3 as outputs
-  *port_d &= 0x0F; //set pins PD0-PD3 to enable pullup
+  *ddr_b |= 0x0F; //set pins PB0-PB3 as outputs
+  *port_b |= 0x0F; //set pins PB0-PB3 to enable pullup
 
   if (status == 1) //disabled
   {
-    *port_b |= 0x01; // 0000 0001 > PB0 high (yellow), all others low
+    // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB0 high (yellow)
+    *port_b |= (*port_b & 0xF0) | 0x01;
   }
   else if (status == 2) //idle
   {
-    *port_b |= 0x02; // 0000 0010 > PB1 high (green), all others low
+    // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB1 high (green)
+    *port_b |= (*port_b & 0xF0) | 0x02;
   }
   else if (status == 3) //running
   {
-    *port_b |= 0x04; // 0000 0100 > PB2 high (blue), all others low
+    // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB2 high (blue)
+    *port_b |= (*port_b & 0xF0) | 0x04;
   }
   else if (status == 4) //error
   {
-    *port_b |= 0x08; // 0000 1000 > PB3 high (red), all others low
+    // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB3 high (red)
+    *port_b |= (*port_b & 0xF0) | 0x08;
   }
 }
 
