@@ -30,14 +30,12 @@ const int stepsPerRevolution = 2038;
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
 Stepper myStepper = Stepper(stepsPerRevolution, 1, 3, 2, 4);
 
-/*
-//set up water sensor pin and define water level variable
-const int waterSensor = 48; //Port L, bit 1 (PL1)
+// set up water sensor pin and define water level variable
 volatile int waterValue = 0;
-int waterLevel;
+int waterLevel = 0;
+
 #define WATER_LEVEL_MIN 0
-#define WATER_LEVEL_MAX 521 //TEMP, need to setup based on max value during water sensor calibration
-*/
+#define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
 
 // UART Pointers
 volatile unsigned char *myUCSR0A = 0x00C0;
@@ -79,8 +77,7 @@ void loop()
   {
     // get button input (either 1 or -1)
 
-
-    Motor(false, button input);
+    Motor(false, 1);
     if (!motorState)
     {
       motorState = true;
@@ -175,14 +172,12 @@ void Motor(bool onOff, int direction)
   // essentially have direction be 1 for clockwise and -1 for counterclockwise
 }
 
-/*
 void getWaterLevel()
 {
-  //this function reads the water sensor
-  waterValue = (pinl >> PL1) & 0x01; //mask
-  waterLevel = map(value, WATER_LEVEL_MIN, WATER_LEVEL_MAX, 0, 4); // 4 levels also need to setup max macro
+  // this function reads the water sensor
+  waterValue = (pinl >> PL1) & 0x01;                                    // mask
+  waterLevel = map(waterValue, WATER_LEVEL_MIN, WATER_LEVEL_MAX, 0, 4); // 4 levels also need to setup max macro
 }
-*/
 
 /* THIS IS WRONG
 void LED()
@@ -234,10 +229,12 @@ unsigned char U0kbhit()
 {
   return *myUCSR0A & RDA;
 }
+
 unsigned char U0getchar()
 {
   return *myUDR0;
 }
+
 void U0putchar(unsigned char U0pdata)
 {
   while ((*myUCSR0A & TBE) == 0)
