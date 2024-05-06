@@ -72,9 +72,9 @@ void loop()
   // put your main code here, to run repeatedly:
   lcdDisplay(); // display the temperature and humidity
 
-  // getWaterLevel(); // get the water level
+  getWaterLevel(); // get the water level
   // if water level is good
-  /*
+
   if (waterLevel == 1)
   {
     // get button input (either 1 or -1)
@@ -96,7 +96,6 @@ void loop()
       // prints out state change
     }
   }
-  */
 }
 
 void lcdDisplay()
@@ -177,7 +176,7 @@ void Motor(bool onOff, int direction)
 void getWaterLevel()
 {
   // this function reads the water sensor
-  waterValue = (pinl >> PL1) & 0x01;                                    // mask
+  waterValue = adc_read(0);                                             // mask
   waterLevel = map(waterValue, WATER_LEVEL_MIN, WATER_LEVEL_MAX, 0, 4); // 4 levels also need to setup max macro
 }
 
@@ -213,6 +212,31 @@ void LED()
   }
 }
 */
+
+unsigned int adc_read(unsigned char adc_channel_num)
+{
+  // clear the channel selection bits (MUX 4:0)
+  *my_ADMUX &= 0b11100000;
+  // clear the channel selection bits (MUX 5)
+  *my_ADCSRB &= 0b11110111;
+  // set the channel number
+  if (adc_channel_num > 7)
+  {
+    // set the channel selection bits, but remove the most significant bit (bit 3)
+    adc_channel_num -= 8;
+    // set MUX bit 5
+    *my_ADCSRB |= 0b00001000;
+  }
+  // set the channel selection bits
+  *my_ADMUX += adc_channel_num;
+  // set bit 6 of ADCSRA to 1 to start a conversion
+  *my_ADCSRA |= 0x40;
+  // wait for the conversion to complete
+  while ((*my_ADCSRA & 0x40) != 0)
+    ;
+  // return the result in the ADC data register
+  return *my_ADC_DATA;
+}
 
 // UART functions
 void U0Init(int U0baud)
