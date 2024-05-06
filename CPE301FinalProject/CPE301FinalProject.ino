@@ -5,6 +5,7 @@
 // included libraries
 #include <LiquidCrystal.h>
 #include <DHT11.h>
+#include <Stepper.h>
 
 #define RDA 0x80
 #define TBE 0x20
@@ -23,12 +24,19 @@ volatile unsigned char* ddr_b = (unsigned char*) 0x24
 */
 
 /*
+//set up motor
+const int stepsPerRevolution = 2038;
+/ Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
+Stepper myStepper = Stepper(stepsPerRevolution, x, x, x, x);
+*/
+
+/*
 //set up water sensor pin and define water level variable
 const int waterSensor = 48; //Port L, bit 1 (PL1)
 volatile int waterValue = 0;
 int waterLevel;
 #define WATER_LEVEL_MIN 0
-#define WATER_LEVEL_MAX 521 //TEMP
+#define WATER_LEVEL_MAX 521 //TEMP, need to setup based on max value during water sensor calibration
 */
 
 // UART Pointers
@@ -69,12 +77,12 @@ void loop()
   /*
   if (waterLevel == 1)
   {
-    // turn motor on
+    //motor function call
   }
   // if water level is too low
   else
   {
-    // turn motor off
+    //motor function call
   }
   */
 }
@@ -135,6 +143,22 @@ ISR(TIMER1_OVF_vect)
   }
 }
 */
+
+void Motor(bool onOff, int direction) {
+  if(onOff) {
+    myStepper.setSpeed(5); // arbitrary speed in rpm
+    myStepper.step(stepsPerRevolution * direction);
+    //maybe delay here
+  }
+  else {
+    myStepper.setSpeed(0); //I think this turns it off (sets rpm to zero)
+    myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
+    //maybe delay here
+  }
+  //a positive stepsPerRevolution is clockwise and negative is counter clockwise
+  //essentially have direction be 1 for clockwise and -1 for counterclockwise
+}
+
 /*
 void getWaterLevel()
 {
