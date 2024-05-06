@@ -53,16 +53,6 @@ volatile unsigned char *my_ADCSRB = (unsigned char *)0x7B;
 volatile unsigned char *my_ADCSRA = (unsigned char *)0x7A;
 volatile unsigned int *my_ADC_DATA = (unsigned int *)0x78;
 
-/*
-//timer Pointers
-volatile unsigned char *myTCCR1A = (unsigned char *) 0x80;
-volatile unsigned char *myTCCR1B = (unsigned char *) 0x81;
-volatile unsigned char *myTCCR1C = (unsigned char *) 0x82;
-volatile unsigned char *myTIMSK1 = (unsigned char *) 0x6F;
-volatile unsigned char *myTIFR1 =  (unsigned char *) 0x36;
-volatile unsigned int  *myTCNT1  = (unsigned  int *) 0x84;
-*/
-
 void setup()
 {
   // put your setup code here, to run once:
@@ -130,39 +120,6 @@ void lcdDisplay()
   delay(10); // delay for 1 minute
   // REPLACE WITH MILLIS() AT SOME POINT
 }
-/*
-//timer setup function
-void setup_timer_regs()
-{
-  //set up the timer control registers
-  *myTCCR1A= 0x00;
-  *myTCCR1B= 0X00;
-  *myTCCR1C= 0x00;
-
-  //reset the TOV flag
-  *myTIFR1 |= 0x01;
-
-  //enable the TOV interrupt
-  *myTIMSK1 |= 0x01;
-}
-
-//timer overflow ISR
-ISR(TIMER1_OVF_vect)
-{
-  //Stop the Timer
-  *myTCCR1B &= 0xF8;
-  //Load the Count
-  *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
-  //Start the Timer
-  *myTCCR1B |= 0b00000001;
-  //if it's not the STOP amount
-  if(currentTicks != 65535)
-  {
-    //XOR to toggle PB6
-    *portB ^= 0x40;
-  }
-}
-*/
 
 void Motor(bool isOn, int direction)
 {
