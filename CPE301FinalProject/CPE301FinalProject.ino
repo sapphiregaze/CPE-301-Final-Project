@@ -287,7 +287,32 @@ unsigned char U0getchar()
 
 void U0putchar(unsigned char U0pdata)
 {
-  while ((*myUCSR0A & TBE) == 0)
-    ;
+  while ((*myUCSR0A & TBE) == 0);
   *myUDR0 = U0pdata;
+}
+
+void outputStateChange(String state) {
+  for(int i = 0; i < state.size(); i++) {
+    U0putchar(state[i]);
+  }
+  U0putchar(' ');
+
+  String date = MyClock.GetDateStr();
+  String hour = MyClock.Hour();
+  String minute = MyClock.Minute();
+
+  for(int i = 0; i < date.size(); i++) {
+    U0putchar(state[i]);
+  }
+  U0putchar(' ');
+
+  for(int i = 0; i < Hour.size(); i++) {
+    U0putchar(state[i]);
+  }
+  U0putchar(':');
+
+  for(int i = 0; i < minute.size(); i++) {
+    U0putchar(state[i]);
+  }
+  U0putchar('\n');
 }
