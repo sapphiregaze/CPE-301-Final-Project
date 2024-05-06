@@ -123,7 +123,7 @@ void lcdDisplay()
   lcd.print(humidity);
   lcd.print("%");
 
-  delay(60000); // delay for 1 minute
+  delay(10); // delay for 1 minute
   // REPLACE WITH MILLIS() AT SOME POINT
 }
 /*
@@ -183,6 +183,8 @@ void getWaterLevel()
   // this function reads the water sensor
   waterValue = adc_read(0);                                             // mask
   waterLevel = map(waterValue, WATER_LEVEL_MIN, WATER_LEVEL_MAX, 0, 4); // 4 levels also need to setup max macro
+  Serial.println(waterValue);
+  Serial.println(waterLevel);
 }
 
 /* THIS IS WRONG
