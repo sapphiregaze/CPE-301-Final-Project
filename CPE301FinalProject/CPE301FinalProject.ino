@@ -88,7 +88,7 @@ void loop()
     if (!motorState)
     {
       motorState = true;
-      outputStateChange("Motor is on ");
+      outputStateChange(String("Motor is on "));
     }
   }
   // if water level is too low
@@ -98,7 +98,7 @@ void loop()
     if (motorState)
     {
       motorState = false;
-      outputStateChange("Motor is off ");
+      outputStateChange(String("Motor is off "));
     }
   }
 }
@@ -300,9 +300,9 @@ void outputStateChange(String state)
   }
   U0putchar(' ');
 
-  String date = MyClock.GetDateStr();
-  String hour = MyClock.Hour();
-  String minute = MyClock.Minute();
+  String date = String(MyClock.GetDateStr());
+  String hour = String(MyClock.Hour());
+  String minute = String(MyClock.Minute());
 
   for (int i = 0; i < date.length(); i++)
   {
