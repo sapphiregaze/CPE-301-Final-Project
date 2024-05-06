@@ -6,7 +6,7 @@
 #include <LiquidCrystal.h>
 #include <DHT11.h>
 #include <Stepper.h>
-// #include <Clock.h>
+#include <Clock.h>
 
 #define RDA 0x80
 #define TBE 0x20
@@ -67,7 +67,7 @@ void setup()
   U0Init(9600);
   adc_init();
   lcd.begin(16, 2); // set up number of columns and rows
-  // MyClock.Init();
+  MyClock.Init();
   // setup the Timer for Normal Mode, with the TOV interrupt enabled
   // setup_timer_regs();
 }
@@ -187,38 +187,36 @@ void getWaterLevel()
   Serial.println(waterLevel);
 }
 
-/* THIS IS WRONG
-void LED()
+void LED(status)
 {
   //this function sets up the status LEDs
 
-  //RED - PD0, pin 53
-  //BLUE - PD1, pin 52
-  //YELLOW - PD2, pin 51
-  //GREEN - PD3, pin 50
+  //YELLOW - PB0, pin 53
+  //GREEN - PB1, pin 52
+  //BLUE - PB2, pin 51
+  //RED - PB3, pin 50
 
   *ddr_d |= 0x0F; //set pins PD0-PD3 as outputs
   *port_d &= 0x0F; //set pins PD0-PD3 to enable pullup
 
-
-  if ()
+  if (status == 1) //disabled
   {
-    *port_b &= 0x01; // 0000 0001 > PB0 high, all others low
+    *port_b |= 0x01; // 0000 0001 > PB0 high (yellow), all others low
   }
-  else if ()
+  else if (status == 2) //idle
   {
-    *port_b &= 0x02; // 0000 0010 > PB1 high, all others low
+    *port_b |= 0x02; // 0000 0010 > PB1 high (green), all others low
   }
-  else if ()
+  else if (status == 3) //running
   {
-    *port_b |= 0x04; // 0000 0100 > PB2 high, all others low
+    *port_b |= 0x04; // 0000 0100 > PB2 high (blue), all others low
   }
-  else if ()
+  else if (status == 4) //error
   {
-    *port_b |= 0x08; // 0000 1000 > PB3 high, all others low
+    *port_b |= 0x08; // 0000 1000 > PB3 high (red), all others low
   }
 }
-*/
+
 
 void adc_init()
 {
