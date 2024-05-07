@@ -15,6 +15,8 @@
 #define WATER_LEVEL_MIN 0
 #define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
 
+#define TEMPERATURE_THRESHOLD 240 // integer temperature at which to turn on fan
+
 // set up LCD pins
 const int RS = 13, EN = 12, D4 = 11, D5 = 10, D6 = 9, D7 = 8;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
@@ -37,6 +39,9 @@ Stepper myStepper = Stepper(stepsPerRevolution, 1, 3, 2, 4);
 // set up water sensor pin and define water level variable
 volatile int waterValue = 0;
 int waterLevel = 0;
+
+int temperature = 0;
+int humidity = 0;
 
 // initialize LED status
 int status = 0;
@@ -81,30 +86,33 @@ void loop()
   //
   status = 2; // system idle, green LED should be 
   statusLED(status);
-  lcdDisplay(); // display the temperature and humidity
+
+  temperature = dht11.readTemperature(); // read the temperature
+  humidity = dht11.readHumidity();       // read the humidity
   getWaterLevel(); // get the water level
-  // if water level is good
+  lcdDisplay(); // display the temperature and humidity
 
-  if (waterLevel >= 2)
-  {
-
-      //fan motor call
-    if (!motorState)
-    {
-      motorState = true;
-      outputStateChange(String("Motor is on "));
-    }
-  }
   // if water level is too low
-  else
-  {
-    //fan motor call
-    if (motorState)
+  if (waterLevel < 2)
     {
       motorState = false;
       outputStateChange(String("Motor is off "));
     }
+
+  // check temperature and restart fan motor accordingly
+
+  if (temperature > TEMPERATURE_THRESHOLD && !motorState) {
+    motorState = true;
+    //fanMotor();
+    outputStateChange(String("Fan motor is on "));
   }
+
+  else if (motorState) {
+    motorState = true;
+    //fanMotor();
+    outputStateChange(String("Fan motor is off "));
+  }
+
   //
   // if stop button pressed
   //
@@ -115,8 +123,6 @@ void loop()
 void lcdDisplay()
 {
   // this function sets up the the lCD
-  int temperature = dht11.readTemperature(); // read the temperature
-  int humidity = dht11.readHumidity();       // read the humidity
 
   lcd.clear(); // clear the lcd
 
@@ -136,19 +142,19 @@ void lcdDisplay()
   // REPLACE WITH MILLIS() AT SOME POINT
 }
 
-void ventMotor( int direction)
+void ventMotor(int direction)
 {
     myStepper.setSpeed(5); // arbitrary speed in rpm
     myStepper.step(stepsPerRevolution * direction);
     myStepper.setSpeed(0);              // I think this turns it off (sets rpm to zero)
     myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
     // maybe delay here
-  }
+
   // a positive stepsPerRevolution is clockwise and negative is counter clockwise
   // essentially have direction be 1 for clockwise and -1 for counterclockwise
 }
 
-void getWaterLevel()
+int getWaterLevel()
 {
   // this function reads the water sensor
   waterValue = adc_read(0);                                             // mask
