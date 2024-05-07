@@ -87,9 +87,8 @@ void loop()
 
   if (waterLevel >= 2)
   {
-    // get button input (either 1 or -1)
 
-    Motor(true, 1);
+      //fan motor call
     if (!motorState)
     {
       motorState = true;
@@ -99,7 +98,7 @@ void loop()
   // if water level is too low
   else
   {
-    Motor(false, 0);
+    //fan motor call
     if (motorState)
     {
       motorState = false;
@@ -137,16 +136,10 @@ void lcdDisplay()
   // REPLACE WITH MILLIS() AT SOME POINT
 }
 
-void Motor(bool isOn, int direction)
+void ventMotor( int direction)
 {
-  if (isOn)
-  {
     myStepper.setSpeed(5); // arbitrary speed in rpm
     myStepper.step(stepsPerRevolution * direction);
-    // maybe delay here
-  }
-  else
-  {
     myStepper.setSpeed(0);              // I think this turns it off (sets rpm to zero)
     myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
     // maybe delay here
