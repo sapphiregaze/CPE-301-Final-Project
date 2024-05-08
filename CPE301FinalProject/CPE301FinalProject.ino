@@ -12,6 +12,9 @@
 #define RDA 0x80
 #define TBE 0x20
 
+#define RUNNING true
+#define IDLE false
+
 #define WATER_LEVEL_MIN 0
 #define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
 
@@ -21,7 +24,8 @@
 const int RS = 13, EN = 12, D4 = 11, D5 = 10, D6 = 9, D7 = 8;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
 
-bool motorState = false;
+bool stepperMotorState = false;
+bool fanMotorState = false;
 
 // set up DHT pins
 DHT11 dht11(7); // DHT sensor connected to digital pin 7
@@ -29,6 +33,12 @@ DHT11 dht11(7); // DHT sensor connected to digital pin 7
 //define pointers for port B, used for LEDs
 volatile unsigned char* port_b = (unsigned char*) 0x25;
 volatile unsigned char* ddr_b = (unsigned char*) 0x24;
+
+// Fan motor: controlled by digital pins 3 (PE5) and 4 (PG5)
+volatile unsigned char* port_e = (unsigned char*) 0x2E;
+volatile unsigned char* ddr_e = (unsigned char*) 0x2D;
+volatile unsigned char* port_g = (unsigned char*) 0x34;
+volatile unsigned char* port_g = (unsigned char*) 0x3D;
 
 
 // set up motor
@@ -76,6 +86,10 @@ void setup()
   lcd.begin(16, 2); // set up number of columns and rows
   status = 1; // system is disabled, yellow LED should be on
   statusLED(status);
+
+  // Setup fan motor pointers
+  *ddr_e |= 0x20; // set pins PE5 as output
+  *ddr_g |= 0x20; // set pins PG5 as output
 }
 
 void loop()
@@ -95,22 +109,16 @@ void loop()
   // if water level is too low
   if (waterLevel < 2)
     {
-      motorState = false;
-      outputStateChange(String("Motor is off "));
+      // ISR interrupt error
     }
 
   // check temperature and restart fan motor accordingly
-
-  if (temperature > TEMPERATURE_THRESHOLD && !motorState) {
-    motorState = true;
-    //fanMotor();
-    outputStateChange(String("Fan motor is on "));
+  if (temperature > TEMPERATURE_THRESHOLD && fanMotorState == IDLE) {
+    toggleFanState(RUNNING);
   }
 
-  else if (motorState) {
-    motorState = true;
-    //fanMotor();
-    outputStateChange(String("Fan motor is off "));
+  else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING) {
+    toggleFanState(IDLE);
   }
 
   //
@@ -152,6 +160,15 @@ void ventMotor(int direction)
 
   // a positive stepsPerRevolution is clockwise and negative is counter clockwise
   // essentially have direction be 1 for clockwise and -1 for counterclockwise
+}
+
+void toggleFanState() {
+  // Send signal from digital pin 3 (PE5) to DC motor IN1
+  if (!fanMotorState) *port_e |= (0x01 << 5); // ON
+  else *port_e |= ~(0x01 << 7); // OFF
+
+  fanMotorState = !fanMotorState;
+  outputStateChange(String("Fan motor: STATE = " + fanMotorState));
 }
 
 int getWaterLevel()
