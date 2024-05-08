@@ -38,6 +38,8 @@ volatile unsigned char* port_b = (unsigned char*) 0x25;
 volatile unsigned char* ddr_b = (unsigned char*) 0x24;
 
 // Fan motor: controlled by digital pins 3 (PE5) and 4 (PG5)
+// Start (reset) button: controlled by digital pin 2 (PE2)
+// Stop button: controlled by digital pin 1 (PE1)
 volatile unsigned char* port_e = (unsigned char*) 0x2E;
 volatile unsigned char* ddr_e = (unsigned char*) 0x2D;
 volatile unsigned char* port_g = (unsigned char*) 0x34;
@@ -90,22 +92,35 @@ void setup()
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
-  // Setup fan motor pointers
+  // Setup fan motor DDR
   *ddr_e |= 0x20; // set pins PE5 as output
   *ddr_g |= 0x20; // set pins PG5 as output
+
+  // Setup button DDR
+  *ddr_e |= 0x01; // set stop button PE1 as input
+  *ddr_e |= 0x02; // set start button PE2 as input
 }
 
 void loop()
 {
   // put your main code here, to run repeatedly:
-  //
-  // if (start button pressed) {
-  //   if (status == ERROR || status == DISABLED) { // should do nothing in other states
-  //     status = IDLE; // system idle, green LED should be 
-  //     statusLED(status);
-  //   }
-  // }
 
+  // STOP BUTTON
+  if ((*port_e & 0x01) && status != DISABLED) {
+    status = DISABLED; //system disabled, yellow LED should be on
+    statusLED(status);
+    toggleFanState(DISABLED);
+  }
+
+  // START BUTTON PRESSED
+  else if (*port_e & 0x02) {
+    if (status == ERROR || status == DISABLED) { // should do nothing in other states
+      status = IDLE; // system idle, green LED should be 
+      statusLED(status);
+    }
+  }
+
+  // MAIN SYSTEM LOOP
   if (status == RUNNING || status == IDLE) {
     temperature = dht11.readTemperature(); // read the temperature
     humidity = dht11.readHumidity();       // read the humidity
@@ -134,12 +149,6 @@ void loop()
       toggleFanState(DISABLED);
     }
   }
-
-  // if (stop button pressed && status != DISABLED) {
-  //   status = DISABLED; //system disabled, yellow LED should be on
-  //   statusLED(status);
-  //   toggleFanState(DISABLED);
-  // }
 }
 
 void lcdDisplay()
