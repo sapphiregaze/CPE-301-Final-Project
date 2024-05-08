@@ -2,6 +2,9 @@
 
 Final lab project for CPE 301 Spring 2024
 
+## Necessary libraries
+- DHT11 by Dhruba Saha
+
 ## Team
 
 **Group Name**: Arbitrary Name

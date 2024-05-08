@@ -12,8 +12,11 @@
 #define RDA 0x80
 #define TBE 0x20
 
-#define RUNNING true
-#define IDLE false
+// operational state
+#define ERROR 3
+#define IDLE 2
+#define RUNNING 1
+#define DISABLED 0
 
 #define WATER_LEVEL_MIN 0
 #define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
@@ -54,7 +57,7 @@ int temperature = 0;
 int humidity = 0;
 
 // initialize LED status
-int status = 0;
+int status = DISABLED;
 
 // UART Pointers
 volatile unsigned char *myUCSR0A = 0x00C0;
@@ -84,7 +87,7 @@ void setup()
   adc_init();
   MyClock.Init();
   lcd.begin(16, 2); // set up number of columns and rows
-  status = 1; // system is disabled, yellow LED should be on
+  status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
   // Setup fan motor pointers
@@ -96,58 +99,79 @@ void loop()
 {
   // put your main code here, to run repeatedly:
   //
-  // if start button pressed
-  //
-  status = 2; // system idle, green LED should be 
-  statusLED(status);
+  // if (start button pressed) {
+  //   if (status == ERROR || status == DISABLED) { // should do nothing in other states
+  //     status = IDLE; // system idle, green LED should be 
+  //     statusLED(status);
+  //   }
+  // }
 
-  temperature = dht11.readTemperature(); // read the temperature
-  humidity = dht11.readHumidity();       // read the humidity
-  getWaterLevel(); // get the water level
-  lcdDisplay(); // display the temperature and humidity
+  if (status == RUNNING || status == IDLE) {
+    temperature = dht11.readTemperature(); // read the temperature
+    humidity = dht11.readHumidity();       // read the humidity
+    getWaterLevel(); // get the water level
+    lcdDisplay(); // display the temperature and humidity
 
-  // if water level is too low
-  if (waterLevel < 2)
+    // if water level is too low
+    if (waterLevel < 2)
     {
+      status = ERROR;
+      statusLED(status);
+      toggleFanState(DISABLED);
       // ISR interrupt error
     }
 
-  // check temperature and restart fan motor accordingly
-  if (temperature > TEMPERATURE_THRESHOLD && fanMotorState == IDLE) {
-    toggleFanState(RUNNING);
+    // check temperature and restart fan motor accordingly
+    else if (temperature > TEMPERATURE_THRESHOLD && fanMotorState == DISABLED) {
+      status = RUNNING;
+      statusLED(status);
+      toggleFanState(RUNNING);
+    }
+
+    else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING) {
+      status = DISABLED;
+      statusLED(status);
+      toggleFanState(DISABLED);
+    }
   }
 
-  else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING) {
-    toggleFanState(IDLE);
-  }
-
-  //
-  // if stop button pressed
-  //
-  status = 1; //system disabled, yellow LED should be on
-  statusLED(status);
+  // if (stop button pressed && status != DISABLED) {
+  //   status = DISABLED; //system disabled, yellow LED should be on
+  //   statusLED(status);
+  //   toggleFanState(DISABLED);
+  // }
 }
 
 void lcdDisplay()
 {
   // this function sets up the the lCD
 
-  lcd.clear(); // clear the lcd
+  if (fanMotorState == RUNNING || fanMotorState == IDLE) {
+    lcd.clear(); // clear the lcd
 
-  // print the temperature, prints "Temperature: # C"
-  lcd.setCursor(0, 0); // move cursor to (0, 0)
-  lcd.print("Temperature: ");
-  lcd.print(temperature);
-  lcd.print("C");
+    // print the temperature, prints "Temperature: # C"
+    lcd.setCursor(0, 0); // move cursor to (0, 0)
+    lcd.print("Temperature: ");
+    lcd.print(temperature);
+    lcd.print("C");
 
-  // print the humidity, prints "Humidity: # %"
-  lcd.setCursor(0, 1); // move cursor to (0, 1)
-  lcd.print("Humidity: ");
-  lcd.print(humidity);
-  lcd.print("%");
+    // print the humidity, prints "Humidity: # %"
+    lcd.setCursor(0, 1); // move cursor to (0, 1)
+    lcd.print("Humidity: ");
+    lcd.print(humidity);
+    lcd.print("%");
 
-  delay(10); // delay for 1 minute
-  // REPLACE WITH MILLIS() AT SOME POINT
+    delay(10); // delay for 1 minute
+    // REPLACE WITH MILLIS() AT SOME POINT
+  }
+
+  else if (fanMotorState == ERROR) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Water level");
+    lcd.setCursor(1, 0);
+    lcd.print("is too low");
+  }
 }
 
 void ventMotor(int direction)
@@ -164,10 +188,15 @@ void ventMotor(int direction)
 
 void toggleFanState() {
   // Send signal from digital pin 3 (PE5) to DC motor IN1
-  if (!fanMotorState) *port_e |= (0x01 << 5); // ON
-  else *port_e |= ~(0x01 << 7); // OFF
+  if (fanMotorState == RUNNING) {
+    *port_e |= ~(0x01 << 5);
+    fanMotorState = DISABLED;
+  }
+  else {
+    *port_e |= (0x01 << 5); // ON
+    fanMotorState = RUNNING;
+  }
 
-  fanMotorState = !fanMotorState;
   outputStateChange(String("Fan motor: STATE = " + fanMotorState));
 }
 
@@ -192,22 +221,22 @@ void statusLED(int statusLight)
   *ddr_b |= 0x0F; // set pins PB0-PB3 as outputs
   *port_b |= 0x0F; // set pins PB0-PB3 to enable pullup
 
-  if (statusLight == 1) //disabled
+  if (statusLight == DISABLED)
   {
     // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB0 high (yellow)
     *port_b |= (*port_b & 0xF0) | 0x01;
   }
-  else if (statusLight == 2) //idle
+  else if (statusLight == IDLE)
   {
     // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB1 high (green)
     *port_b |= (*port_b & 0xF0) | 0x02;
   }
-  else if (statusLight == 3) //running
+  else if (statusLight == RUNNING)
   {
     // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB2 high (blue)
     *port_b |= (*port_b & 0xF0) | 0x04;
   }
-  else if (statusLight == 4) //error
+  else if (statusLight == ERROR)
   {
     // clears PB0-PB3, leaving PB4-PB7 unchanged, then sets PB3 high (red)
     *port_b |= (*port_b & 0xF0) | 0x08;
