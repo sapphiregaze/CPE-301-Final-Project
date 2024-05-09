@@ -97,28 +97,31 @@ void setup()
   statusLED(status);
 
   // Setup fan motor DDR
-  *ddr_e |= 0x20; // set pins PE5 as output
-  *ddr_g |= 0x20; // set pins PG5 as output
+  // *ddr_e |= 0x20; // set pins PE5 as output
+  // *ddr_g |= 0x20; // set pins PG5 as output
 
   // Setup button DDR
-  *ddr_e |= 0x01; // set stop button PE1 as input
-  *ddr_e |= 0x02; // set start button PE2 as input
+  *ddr_e &= 0xF8; // set stop button PE1 and PE2 as input
 }
 
 void loop()
 {
   // put your main code here, to run repeatedly:
-  Serial.println(status);
 
   // STOP BUTTON
-  if ((*port_e & 0x01) && status != DISABLED) {
+  int startButtonPressed = (*port_e & 0x02);
+  int stopButtonPressed = (*port_e & 0x04);
+  Serial.println(startButtonPressed);
+  Serial.println(stopButtonPressed);
+
+  if (stopButtonPressed > 0 && status != DISABLED) {
     status = DISABLED; //system disabled, yellow LED should be on
     statusLED(status);
     toggleFanState(DISABLED);
   }
 
   // START BUTTON PRESSED
-  else if (*port_e & 0x02) {
+  else if (startButtonPressed > 0) {
     if (status == ERROR || status == DISABLED) { // should do nothing in other states
       status = IDLE; // system idle, green LED should be 
       statusLED(status);
@@ -162,7 +165,7 @@ void lcdDisplay()
 {
   // this function sets up the the lCD
 
-  if (fanMotorState == RUNNING || fanMotorState == IDLE) {
+  if (status == RUNNING || status == IDLE) {
     lcd.clear(); // clear the lcd
 
     // print the temperature, prints "Temperature: # C"
@@ -181,7 +184,7 @@ void lcdDisplay()
     // REPLACE WITH MILLIS() AT SOME POINT
   }
 
-  else if (fanMotorState == ERROR) {
+  else if (status == ERROR) {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Water level");
@@ -207,7 +210,8 @@ void toggleFanState(int state) {
   *port_e |= state * (0x01 << 5);
   fanMotorState = state;
 
-  outputStateChange(String("Fan motor: STATE = " + fanMotorState));
+  if (fanMotorState) outputStateChange("Fan motor: STATE = ON \n");
+  else outputStateChange("Fan motor: STATE = OFF \n");
 }
 
 int getWaterLevel()
@@ -229,7 +233,10 @@ void statusLED(int statusLight)
   // RED - PB3, pin 50, ERROR
 
   *ddr_b |= 0x0F; // set pins PB0-PB3 as outputs
-  *port_b |= 0x0F; // set pins PB0-PB3 to enable pullup
+  // pullup is unenabled for default LOW
+
+  // clear PB0-PB3
+  *port_b &= 0xF0;
 
   if (statusLight == DISABLED)
   {
@@ -366,9 +373,12 @@ void outputStateChange(String state)
   byte hour = myRTC.getHour(is24hour, isPMtime);
   byte minute = myRTC.getMinute();
 
-  Serial.println("Date: " + date);
-  Serial.println("Hour: " + hour);
-  Serial.println("Minute: " + minute);
+  Serial.println("Date: ");
+  Serial.println(date);
+  Serial.println("Hour: ");
+  Serial.println(hour);
+  Serial.println("Minute: ");
+  Serial.println(minute);
 
   // for (int i = 0; i < date.length(); i++)
   // {
