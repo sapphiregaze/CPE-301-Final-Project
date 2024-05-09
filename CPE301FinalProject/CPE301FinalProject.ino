@@ -42,8 +42,8 @@ volatile unsigned char* port_b = (unsigned char*) 0x25;
 volatile unsigned char* ddr_b = (unsigned char*) 0x24;
 
 // Fan motor: controlled by digital pins 3 (PE5) and 4 (PG5)
-// Start (reset) button: controlled by digital pin 2 (PE2)
-// Stop button: controlled by digital pin 1 (PE1)
+// Start (reset) button: controlled by digital pin 3 (PE3)
+// Stop button: controlled by digital pin 2 (PE2)
 volatile unsigned char* port_e = (unsigned char*) 0x2E;
 volatile unsigned char* ddr_e = (unsigned char*) 0x2D;
 volatile unsigned char* port_g = (unsigned char*) 0x34;
@@ -101,7 +101,7 @@ void setup()
   // *ddr_g |= 0x20; // set pins PG5 as output
 
   // Setup button DDR
-  *ddr_e &= 0xF8; // set stop button PE1 and PE2 as input
+  *ddr_e &= 0xF3; // set stop button PE2 and PE3 as input
 }
 
 void loop()
@@ -109,8 +109,8 @@ void loop()
   // put your main code here, to run repeatedly:
 
   // STOP BUTTON
-  int startButtonPressed = (*port_e & 0x02);
-  int stopButtonPressed = (*port_e & 0x04);
+  int startButtonPressed = (*port_e & 0x04);
+  int stopButtonPressed = (*port_e & 0x08);
   Serial.println(startButtonPressed);
   Serial.println(stopButtonPressed);
 
