@@ -6,7 +6,8 @@
 #include <LiquidCrystal.h>
 #include <DHT11.h>
 #include <Stepper.h>
-#include <Clock.h>
+// #include <Clock.h>
+#include <DS3231.h>
 
 // macros
 #define RDA 0x80
@@ -33,6 +34,9 @@ bool fanMotorState = false;
 // set up DHT pins
 DHT11 dht11(7); // DHT sensor connected to digital pin 7
 
+// set up clock object
+DS3231 myRTC;
+
 //define pointers for port B, used for LEDs
 volatile unsigned char* port_b = (unsigned char*) 0x25;
 volatile unsigned char* ddr_b = (unsigned char*) 0x24;
@@ -43,7 +47,7 @@ volatile unsigned char* ddr_b = (unsigned char*) 0x24;
 volatile unsigned char* port_e = (unsigned char*) 0x2E;
 volatile unsigned char* ddr_e = (unsigned char*) 0x2D;
 volatile unsigned char* port_g = (unsigned char*) 0x34;
-volatile unsigned char* port_g = (unsigned char*) 0x3D;
+volatile unsigned char* ddr_g = (unsigned char*) 0x3D;
 
 
 // set up motor
@@ -87,7 +91,7 @@ void setup()
   // put your setup code here, to run once:
   U0Init(9600);
   adc_init();
-  MyClock.Init();
+  Wire.begin();
   lcd.begin(16, 2); // set up number of columns and rows
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
@@ -104,6 +108,7 @@ void setup()
 void loop()
 {
   // put your main code here, to run repeatedly:
+  Serial.println(status);
 
   // STOP BUTTON
   if ((*port_e & 0x01) && status != DISABLED) {
@@ -149,6 +154,8 @@ void loop()
       toggleFanState(DISABLED);
     }
   }
+
+  delay(1000);
 }
 
 void lcdDisplay()
@@ -195,16 +202,10 @@ void ventMotor(int direction)
   // essentially have direction be 1 for clockwise and -1 for counterclockwise
 }
 
-void toggleFanState() {
+void toggleFanState(int state) {
   // Send signal from digital pin 3 (PE5) to DC motor IN1
-  if (fanMotorState == RUNNING) {
-    *port_e |= ~(0x01 << 5);
-    fanMotorState = DISABLED;
-  }
-  else {
-    *port_e |= (0x01 << 5); // ON
-    fanMotorState = RUNNING;
-  }
+  *port_e |= state * (0x01 << 5);
+  fanMotorState = state;
 
   outputStateChange(String("Fan motor: STATE = " + fanMotorState));
 }
@@ -307,21 +308,21 @@ void setup_timer_regs()
   *myTIMSK1 |= 0x01;
 }
 //timer overflow ISR
-ISR(TIMER1_OVF_vect)
-{
-  //Stop the Timer
-  *myTCCR1B &= 0xF8;
-  //Load the Count
-  *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
-  //Start the Timer
-  *myTCCR1B |= 0b00000001;
-  //if it's not the STOP amount
-  if(currentTicks != 65535)
-  {
-    //XOR to toggle PB6
-    *portB ^= 0x40;
-  }
-}
+// ISR(TIMER1_OVF_vect)
+// {
+//   //Stop the Timer
+//   *myTCCR1B &= 0xF8;
+//   //Load the Count
+//   *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
+//   //Start the Timer
+//   *myTCCR1B |= 0b00000001;
+//   //if it's not the STOP amount
+//   if(currentTicks != 65535)
+//   {
+//     //XOR to toggle PB6
+//     *portB ^= 0x40;
+//   }
+// }
 
 // UART functions
 void U0Init(int U0baud)
@@ -358,25 +359,32 @@ void outputStateChange(String state)
   }
   U0putchar(' ');
 
-  String date = String(MyClock.GetDateStr());
-  String hour = String(MyClock.Hour());
-  String minute = String(MyClock.Minute());
+  bool is24hour = true;
+  bool isPMtime = false;
 
-  for (int i = 0; i < date.length(); i++)
-  {
-    U0putchar(state[i]);
-  }
-  U0putchar(' ');
+  byte date = myRTC.getDate();
+  byte hour = myRTC.getHour(is24hour, isPMtime);
+  byte minute = myRTC.getMinute();
 
-  for (int i = 0; i < Hour.length(); i++)
-  {
-    U0putchar(state[i]);
-  }
-  U0putchar(':');
+  Serial.println("Date: " + date);
+  Serial.println("Hour: " + hour);
+  Serial.println("Minute: " + minute);
 
-  for (int i = 0; i < minute.length(); i++)
-  {
-    U0putchar(state[i]);
-  }
-  U0putchar('\n');
+  // for (int i = 0; i < date.length(); i++)
+  // {
+  //   U0putchar(state[i]);
+  // }
+  // U0putchar(' ');
+
+  // for (int i = 0; i < hour.length(); i++)
+  // {
+  //   U0putchar(state[i]);
+  // }
+  // U0putchar(':');
+
+  // for (int i = 0; i < minute.length(); i++)
+  // {
+  //   U0putchar(state[i]);
+  // }
+  // U0putchar('\n');
 }
