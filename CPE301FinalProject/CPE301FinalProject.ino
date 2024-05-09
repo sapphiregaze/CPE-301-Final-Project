@@ -41,11 +41,13 @@ DS3231 myRTC;
 volatile unsigned char* port_b = (unsigned char*) 0x25;
 volatile unsigned char* ddr_b = (unsigned char*) 0x24;
 
-// Fan motor: controlled by digital pins 3 (PE5) and 4 (PG5)
-// Start (reset) button: controlled by digital pin 3 (PE3)
-// Stop button: controlled by digital pin 2 (PE2)
+// Fan motor: controlled by XX
+// Start (reset) button: controlled by digital pin 3 (PE5)
+// Stop button: controlled by digital pin 2 (PE4)
 volatile unsigned char* port_e = (unsigned char*) 0x2E;
 volatile unsigned char* ddr_e = (unsigned char*) 0x2D;
+volatile unsigned char* pin_e = (unsigned char*) 0x2C;
+
 volatile unsigned char* port_g = (unsigned char*) 0x34;
 volatile unsigned char* ddr_g = (unsigned char*) 0x3D;
 
@@ -101,27 +103,25 @@ void setup()
   // *ddr_g |= 0x20; // set pins PG5 as output
 
   // Setup button DDR
-  *ddr_e &= 0xF3; // set stop button PE2 and PE3 as input
+  *ddr_e &= 0xCF; // set PE4 and PE5 as input
 }
 
 void loop()
 {
   // put your main code here, to run repeatedly:
 
-  // STOP BUTTON
-  int startButtonPressed = (*port_e & 0x04);
-  int stopButtonPressed = (*port_e & 0x08);
-  Serial.println(startButtonPressed);
-  Serial.println(stopButtonPressed);
+  bool startButtonPressed = (*pin_e & 0x20) > 0; // PE5
+  bool stopButtonPressed  = (*pin_e & 0x10) > 0; // PE4
 
-  if (stopButtonPressed > 0 && status != DISABLED) {
+  // STOP BUTTON
+  if (stopButtonPressed && status != DISABLED) {
     status = DISABLED; //system disabled, yellow LED should be on
     statusLED(status);
     toggleFanState(DISABLED);
   }
 
-  // START BUTTON PRESSED
-  else if (startButtonPressed > 0) {
+  // START BUTTON
+  if (startButtonPressed) {
     if (status == ERROR || status == DISABLED) { // should do nothing in other states
       status = IDLE; // system idle, green LED should be 
       statusLED(status);
@@ -133,7 +133,6 @@ void loop()
     temperature = dht11.readTemperature(); // read the temperature
     humidity = dht11.readHumidity();       // read the humidity
     getWaterLevel(); // get the water level
-    lcdDisplay(); // display the temperature and humidity
 
     // if water level is too low
     if (waterLevel < 2)
@@ -158,6 +157,7 @@ void loop()
     }
   }
 
+  lcdDisplay(); // display the temperature and humidity or error
   delay(1000);
 }
 
@@ -188,8 +188,14 @@ void lcdDisplay()
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Water level");
-    lcd.setCursor(1, 0);
+    lcd.setCursor(0, 1);
     lcd.print("is too low");
+  }
+
+  else if (status == DISABLED) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Disabled");
   }
 }
 
