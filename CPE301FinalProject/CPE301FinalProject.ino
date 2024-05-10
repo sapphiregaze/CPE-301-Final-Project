@@ -97,6 +97,13 @@ void setup()
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
+  attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); //attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
+  // For attachInterrupt:
+  // LOW to trigger the interrupt whenever the pin is low,
+  // CHANGE to trigger the interrupt whenever the pin changes value
+  // RISING to trigger when the pin goes from low to high,
+  // FALLING for when the pin goes from high to low.
+
   // Setup fan motor DDR
   // *ddr_e |= 0x20; // set pins PE5 as output
   // *ddr_g |= 0x20; // set pins PG5 as output
