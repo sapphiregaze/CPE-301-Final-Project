@@ -51,11 +51,16 @@ volatile unsigned char* pin_e = (unsigned char*) 0x2C;
 volatile unsigned char* port_g = (unsigned char*) 0x34;
 volatile unsigned char* ddr_g = (unsigned char*) 0x3D;
 
+// Digital pin 22 (PA0) used for stepper motor input
+volatile unsigned char* port_a = (unsigned char*) 0x22;
+volatile unsigned char* ddr_a = (unsigned char*) 0x21;
+volatile unsigned char* pin_a = (unsigned char*) 0x20;
+
 
 // set up motor
-const int stepsPerRevolution = 2038;
+const int stepsPerRevolution = 16;
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
-Stepper myStepper = Stepper(stepsPerRevolution, 1, 3, 2, 4);
+Stepper myStepper = Stepper(stepsPerRevolution, 29, 25, 27, 23);
 
 // set up water sensor pin and define water level variable
 volatile int waterValue = 0;
@@ -104,6 +109,9 @@ void setup()
 
   // Setup button DDR
   *ddr_e &= 0xCF; // set PE4 and PE5 as input
+
+  // Setup stepper motor DDR
+  *ddr_a &= 0xFE; // set PA0 as input
 }
 
 void loop()
@@ -112,6 +120,14 @@ void loop()
 
   bool startButtonPressed = (*pin_e & 0x20) > 0; // PE5
   bool stopButtonPressed  = (*pin_e & 0x10) > 0; // PE4
+  bool stepperButtonPressed = (*pin_a & 0x01) > 0; // PA0
+
+  Serial.println((*pin_a & 0x01));
+
+  if (stepperButtonPressed) {
+    Serial.println("STEPPING VENT");
+    ventMotor(1);
+  }
 
   // STOP BUTTON
   if (stopButtonPressed && status != DISABLED) {
@@ -203,8 +219,8 @@ void ventMotor(int direction)
 {
     myStepper.setSpeed(5); // arbitrary speed in rpm
     myStepper.step(stepsPerRevolution * direction);
-    myStepper.setSpeed(0);              // I think this turns it off (sets rpm to zero)
-    myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
+    //myStepper.setSpeed(0);              // I think this turns it off (sets rpm to zero)
+    //myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
     // maybe delay here
 
   // a positive stepsPerRevolution is clockwise and negative is counter clockwise
@@ -225,7 +241,11 @@ int getWaterLevel()
   // this function reads the water sensor
   waterValue = adc_read(0);                                             // mask
   waterLevel = map(waterValue, WATER_LEVEL_MIN, WATER_LEVEL_MAX, 0, 4); // 4 levels also need to setup max macro
-  Serial.println(waterValue);
+
+  // DEBUG
+  Serial.print("Water value / level: ");
+  Serial.print(waterValue);
+  Serial.print("/");
   Serial.println(waterLevel);
 }
 
@@ -366,11 +386,11 @@ void U0putchar(unsigned char U0pdata)
 
 void outputStateChange(String state)
 {
-  for (int i = 0; i < state.length(); i++)
-  {
-    U0putchar(state[i]);
-  }
-  U0putchar(' ');
+  // for (int i = 0; i < state.length(); i++)
+  // {
+  //   U0putchar(state[i]);
+  // }
+  // U0putchar(' ');
 
   bool is24hour = true;
   bool isPMtime = false;
@@ -379,11 +399,14 @@ void outputStateChange(String state)
   byte hour = myRTC.getHour(is24hour, isPMtime);
   byte minute = myRTC.getMinute();
 
-  Serial.println("Date: ");
+  // DEBUG
+  Serial.print("State: ");
+  Serial.println(status);
+  Serial.print("Date: ");
   Serial.println(date);
-  Serial.println("Hour: ");
+  Serial.print("Hour: ");
   Serial.println(hour);
-  Serial.println("Minute: ");
+  Serial.print("Minute: ");
   Serial.println(minute);
 
   // for (int i = 0; i < date.length(); i++)
