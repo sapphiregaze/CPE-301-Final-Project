@@ -3,7 +3,11 @@
 Final lab project for CPE 301 Spring 2024
 
 ## Necessary libraries
+
+- LiquidCrystal
 - DHT11 by Dhruba Saha
+- Stepper
+- DS3231
 
 ## Team
 
