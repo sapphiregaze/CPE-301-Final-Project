@@ -58,7 +58,8 @@ volatile unsigned char* pin_a = (unsigned char*) 0x20;
 
 
 // set up motor
-const int stepsPerRevolution = 16;
+const int stepsPerRevolution = 1024; // 180 degree rotation
+const int stepperSpeed = 10;
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
 Stepper myStepper = Stepper(stepsPerRevolution, 29, 25, 27, 23);
 
@@ -103,7 +104,7 @@ void setup()
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
-  attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); //attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
+  //attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); //attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
   // For attachInterrupt:
   // LOW to trigger the interrupt whenever the pin is low,
   // CHANGE to trigger the interrupt whenever the pin changes value
@@ -129,13 +130,6 @@ void loop()
   bool stopButtonPressed  = (*pin_e & 0x10) > 0; // PE4
   bool stepperButtonPressed = (*pin_a & 0x01) > 0; // PA0
 
-  Serial.println((*pin_a & 0x01));
-
-  if (stepperButtonPressed) {
-    Serial.println("STEPPING VENT");
-    ventMotor(1);
-  }
-
   // STOP BUTTON
   if (stopButtonPressed && status != DISABLED)
   {
@@ -152,6 +146,11 @@ void loop()
       status = IDLE; // system idle, green LED should be
       statusLED(status);
     }
+  }
+
+  // ADJUST VENT
+  if (stepperButtonPressed & status != ERROR) {
+    ventMotor(1);
   }
 
   // MAIN SYSTEM LOOP
@@ -233,11 +232,8 @@ void lcdDisplay()
 
 void ventMotor(int direction)
 {
-    myStepper.setSpeed(5); // arbitrary speed in rpm
+    myStepper.setSpeed(stepperSpeed); // arbitrary speed in rpm
     myStepper.step(stepsPerRevolution * direction);
-    //myStepper.setSpeed(0);              // I think this turns it off (sets rpm to zero)
-    //myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
-    // maybe delay here
 
   // a positive stepsPerRevolution is clockwise and negative is counter clockwise
   // essentially have direction be 1 for clockwise and -1 for counterclockwise
