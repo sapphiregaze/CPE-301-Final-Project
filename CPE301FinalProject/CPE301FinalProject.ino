@@ -37,20 +37,19 @@ DHT11 dht11(7); // DHT sensor connected to digital pin 7
 // set up clock object
 DS3231 myRTC;
 
-//define pointers for port B, used for LEDs
-volatile unsigned char* port_b = (unsigned char*) 0x25;
-volatile unsigned char* ddr_b = (unsigned char*) 0x24;
+// define pointers for port B, used for LEDs
+volatile unsigned char *port_b = (unsigned char *)0x25;
+volatile unsigned char *ddr_b = (unsigned char *)0x24;
 
 // Fan motor: controlled by XX
 // Start (reset) button: controlled by digital pin 3 (PE5)
 // Stop button: controlled by digital pin 2 (PE4)
-volatile unsigned char* port_e = (unsigned char*) 0x2E;
-volatile unsigned char* ddr_e = (unsigned char*) 0x2D;
-volatile unsigned char* pin_e = (unsigned char*) 0x2C;
+volatile unsigned char *port_e = (unsigned char *)0x2E;
+volatile unsigned char *ddr_e = (unsigned char *)0x2D;
+volatile unsigned char *pin_e = (unsigned char *)0x2C;
 
-volatile unsigned char* port_g = (unsigned char*) 0x34;
-volatile unsigned char* ddr_g = (unsigned char*) 0x3D;
-
+volatile unsigned char *port_g = (unsigned char *)0x34;
+volatile unsigned char *ddr_g = (unsigned char *)0x3D;
 
 // set up motor
 const int stepsPerRevolution = 2038;
@@ -80,13 +79,13 @@ volatile unsigned char *my_ADCSRB = (unsigned char *)0x7B;
 volatile unsigned char *my_ADCSRA = (unsigned char *)0x7A;
 volatile unsigned int *my_ADC_DATA = (unsigned int *)0x78;
 
-//timer Pointers
-volatile unsigned char *myTCCR1A = (unsigned char *) 0x80;
-volatile unsigned char *myTCCR1B = (unsigned char *) 0x81;
-volatile unsigned char *myTCCR1C = (unsigned char *) 0x82;
-volatile unsigned char *myTIMSK1 = (unsigned char *) 0x6F;
-volatile unsigned char *myTIFR1 =  (unsigned char *) 0x36;
-volatile unsigned int  *myTCNT1  = (unsigned  int *) 0x84;
+// timer Pointers
+volatile unsigned char *myTCCR1A = (unsigned char *)0x80;
+volatile unsigned char *myTCCR1B = (unsigned char *)0x81;
+volatile unsigned char *myTCCR1C = (unsigned char *)0x82;
+volatile unsigned char *myTIMSK1 = (unsigned char *)0x6F;
+volatile unsigned char *myTIFR1 = (unsigned char *)0x36;
+volatile unsigned int *myTCNT1 = (unsigned int *)0x84;
 
 void setup()
 {
@@ -94,7 +93,7 @@ void setup()
   U0Init(9600);
   adc_init();
   Wire.begin();
-  lcd.begin(16, 2); // set up number of columns and rows
+  lcd.begin(16, 2);  // set up number of columns and rows
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
@@ -111,28 +110,32 @@ void loop()
   // put your main code here, to run repeatedly:
 
   bool startButtonPressed = (*pin_e & 0x20) > 0; // PE5
-  bool stopButtonPressed  = (*pin_e & 0x10) > 0; // PE4
+  bool stopButtonPressed = (*pin_e & 0x10) > 0;  // PE4
 
   // STOP BUTTON
-  if (stopButtonPressed && status != DISABLED) {
-    status = DISABLED; //system disabled, yellow LED should be on
+  if (stopButtonPressed && status != DISABLED)
+  {
+    status = DISABLED; // system disabled, yellow LED should be on
     statusLED(status);
     toggleFanState(DISABLED);
   }
 
   // START BUTTON
-  if (startButtonPressed) {
-    if (status == ERROR || status == DISABLED) { // should do nothing in other states
-      status = IDLE; // system idle, green LED should be 
+  if (startButtonPressed)
+  {
+    if (status == ERROR || status == DISABLED)
+    {                // should do nothing in other states
+      status = IDLE; // system idle, green LED should be
       statusLED(status);
     }
   }
 
   // MAIN SYSTEM LOOP
-  if (status == RUNNING || status == IDLE) {
+  if (status == RUNNING || status == IDLE)
+  {
     temperature = dht11.readTemperature(); // read the temperature
     humidity = dht11.readHumidity();       // read the humidity
-    getWaterLevel(); // get the water level
+    getWaterLevel();                       // get the water level
 
     // if water level is too low
     if (waterLevel < 2)
@@ -144,13 +147,15 @@ void loop()
     }
 
     // check temperature and restart fan motor accordingly
-    else if (temperature > TEMPERATURE_THRESHOLD && fanMotorState == DISABLED) {
+    else if (temperature > TEMPERATURE_THRESHOLD && fanMotorState == DISABLED)
+    {
       status = RUNNING;
       statusLED(status);
       toggleFanState(RUNNING);
     }
 
-    else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING) {
+    else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING)
+    {
       status = DISABLED;
       statusLED(status);
       toggleFanState(DISABLED);
@@ -165,7 +170,8 @@ void lcdDisplay()
 {
   // this function sets up the the lCD
 
-  if (status == RUNNING || status == IDLE) {
+  if (status == RUNNING || status == IDLE)
+  {
     lcd.clear(); // clear the lcd
 
     // print the temperature, prints "Temperature: # C"
@@ -184,7 +190,8 @@ void lcdDisplay()
     // REPLACE WITH MILLIS() AT SOME POINT
   }
 
-  else if (status == ERROR) {
+  else if (status == ERROR)
+  {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Water level");
@@ -192,7 +199,8 @@ void lcdDisplay()
     lcd.print("is too low");
   }
 
-  else if (status == DISABLED) {
+  else if (status == DISABLED)
+  {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Disabled");
@@ -201,23 +209,26 @@ void lcdDisplay()
 
 void ventMotor(int direction)
 {
-    myStepper.setSpeed(5); // arbitrary speed in rpm
-    myStepper.step(stepsPerRevolution * direction);
-    myStepper.setSpeed(0);              // I think this turns it off (sets rpm to zero)
-    myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
-    // maybe delay here
+  myStepper.setSpeed(5); // arbitrary speed in rpm
+  myStepper.step(stepsPerRevolution * direction);
+  myStepper.setSpeed(0);              // I think this turns it off (sets rpm to zero)
+  myStepper.step(stepsPerRevolution); // don't know if this is still nessesary for turning it off
+                                      // maybe delay here
 
   // a positive stepsPerRevolution is clockwise and negative is counter clockwise
   // essentially have direction be 1 for clockwise and -1 for counterclockwise
 }
 
-void toggleFanState(int state) {
+void toggleFanState(int state)
+{
   // Send signal from digital pin 3 (PE5) to DC motor IN1
   *port_e |= state * (0x01 << 5);
   fanMotorState = state;
 
-  if (fanMotorState) outputStateChange("Fan motor: STATE = ON \n");
-  else outputStateChange("Fan motor: STATE = OFF \n");
+  if (fanMotorState)
+    outputStateChange("Fan motor: STATE = ON \n");
+  else
+    outputStateChange("Fan motor: STATE = OFF \n");
 }
 
 int getWaterLevel()
@@ -266,7 +277,7 @@ void statusLED(int statusLight)
   }
 }
 
-//ADC functions
+// ADC functions
 void adc_init()
 {
   // setup the A register
@@ -308,34 +319,34 @@ unsigned int adc_read(unsigned char adc_channel_num)
   return *my_ADC_DATA;
 }
 
-//timer setup function
+// timer setup function
 void setup_timer_regs()
 {
-  //set up the timer control registers
-  *myTCCR1A= 0x00;
-  *myTCCR1B= 0X00;
-  *myTCCR1C= 0x00;
-  //reset the TOV flag
+  // set up the timer control registers
+  *myTCCR1A = 0x00;
+  *myTCCR1B = 0X00;
+  *myTCCR1C = 0x00;
+  // reset the TOV flag
   *myTIFR1 |= 0x01;
-  //enable the TOV interrupt
+  // enable the TOV interrupt
   *myTIMSK1 |= 0x01;
 }
-//timer overflow ISR
-// ISR(TIMER1_OVF_vect)
-// {
-//   //Stop the Timer
-//   *myTCCR1B &= 0xF8;
-//   //Load the Count
-//   *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
-//   //Start the Timer
-//   *myTCCR1B |= 0b00000001;
-//   //if it's not the STOP amount
-//   if(currentTicks != 65535)
-//   {
-//     //XOR to toggle PB6
-//     *portB ^= 0x40;
-//   }
-// }
+// timer overflow ISR
+//  ISR(TIMER1_OVF_vect)
+//  {
+//    //Stop the Timer
+//    *myTCCR1B &= 0xF8;
+//    //Load the Count
+//    *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
+//    //Start the Timer
+//    *myTCCR1B |= 0b00000001;
+//    //if it's not the STOP amount
+//    if(currentTicks != 65535)
+//    {
+//      //XOR to toggle PB6
+//      *portB ^= 0x40;
+//    }
+//  }
 
 // UART functions
 void U0Init(int U0baud)
