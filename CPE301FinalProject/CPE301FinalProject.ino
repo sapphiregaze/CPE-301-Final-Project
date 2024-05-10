@@ -404,3 +404,13 @@ void outputStateChange(String state)
   // }
   // U0putchar('\n');
 }
+
+void myDelay(unsigned int seconds) {
+  int ticks = seconds / 0.0000000625;
+  *myTCCR1B &= 0xF8; // make sure timer is off
+  *myTCNT1 = (unsigned int) (65536 - ticks); //load the counter
+  *myTCCR1B |= 0b00000101; //prescalar 1024, turn timer on
+  while((*myTIFR1 & 0x01)==0); // wait for TIFR overflow flag bit to be set
+  *myTCCR1B &= 0xF8; // Turn off the timer after getting delay
+  *myTIFR1 |= 0x01; // clear the flag bit
+}
