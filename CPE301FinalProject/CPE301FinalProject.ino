@@ -146,6 +146,7 @@ void loop()
     {                // should do nothing in other states
       status = IDLE; // system idle, green LED should be
       statusLED(status);
+      outputStateChange(status); // should output IDLE
     }
   }
 
@@ -167,6 +168,7 @@ void loop()
       status = ERROR;
       statusLED(status);
       toggleFanState(DISABLED);
+      outputStateChange(status); //should output ERROR
       // ISR interrupt error
     }
 
@@ -176,6 +178,7 @@ void loop()
       status = RUNNING;
       statusLED(status);
       toggleFanState(RUNNING);
+      outputStateChange(status); //should output RUNNING
     }
 
     else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING)
@@ -183,6 +186,7 @@ void loop()
       status = DISABLED;
       statusLED(status);
       toggleFanState(DISABLED);
+      outputStateChange(status); //should output DISABLED
     }
   }
 
@@ -444,7 +448,7 @@ void U0putchar(unsigned char U0pdata)
   U0putchar('\n');
 }*/
 
-void outputStateChange(String state)
+void outputStateChange(int state)
 {
   bool century = false;
   bool h12Flag;
@@ -471,12 +475,23 @@ void outputStateChange(String state)
   Serial.println(second, DEC);
   
   //print state
-  U0putchar('System State: ');
-  for (int i = 0; i < state.length(); i++)
+  U0putchar("System State: ");
+  if (state == DISABLED)
   {
-    U0putchar(state[i]);
+    U0putchar("DISABLED\n");
   }
-  U0putchar('\n');
+  if (state == IDLE)
+  {
+    U0putchar("IDLE\n");
+  }
+  if (state == RUNNING)
+  {
+    U0putchar("RUNNING\n");
+  }
+  if (state == ERROR)
+  {
+    U0putchar("ERROR\n");
+  }
 }
 
 void myDelay(unsigned int seconds)
