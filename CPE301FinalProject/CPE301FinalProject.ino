@@ -8,6 +8,7 @@
 #include <Stepper.h>
 // #include <Clock.h>
 #include <DS3231.h>
+#include <Wire.h>
 
 // macros
 #define RDA 0x80
@@ -144,6 +145,7 @@ void loop()
     {                // should do nothing in other states
       status = IDLE; // system idle, green LED should be
       statusLED(status);
+      outputStateChange(status); // should output IDLE
     }
   }
 
@@ -165,6 +167,7 @@ void loop()
       status = ERROR;
       statusLED(status);
       toggleFanState(DISABLED);
+      outputStateChange(status); //should output ERROR
       // ISR interrupt error
     }
 
@@ -174,6 +177,7 @@ void loop()
       status = RUNNING;
       statusLED(status);
       toggleFanState(RUNNING);
+      outputStateChange(status); //should output RUNNING
     }
 
     else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING)
@@ -181,6 +185,7 @@ void loop()
       status = DISABLED;
       statusLED(status);
       toggleFanState(DISABLED);
+      outputStateChange(status); //should output DISABLED
     }
   }
 
@@ -402,7 +407,7 @@ void U0putchar(unsigned char U0pdata)
   *myUDR0 = U0pdata;
 }
 
-void outputStateChange(String state)
+/*void outputStateChange(String state)
 {
   // for (int i = 0; i < state.length(); i++)
   // {
@@ -427,23 +432,69 @@ void outputStateChange(String state)
   Serial.print("Minute: ");
   Serial.println(minute);
 
-  // for (int i = 0; i < date.length(); i++)
-  // {
-  //   U0putchar(state[i]);
-  // }
-  // U0putchar(' ');
+  for (int i = 0; i < date.length(); i++)
+  {
+    U0putchar(state[i]);
+  }
+  U0putchar(' ');
 
-  // for (int i = 0; i < hour.length(); i++)
-  // {
-  //   U0putchar(state[i]);
-  // }
-  // U0putchar(':');
+  for (int i = 0; i < hour.length(); i++)
+  {
+    U0putchar(state[i]);
+  }
+  U0putchar(':');
 
-  // for (int i = 0; i < minute.length(); i++)
-  // {
-  //   U0putchar(state[i]);
-  // }
-  // U0putchar('\n');
+  for (int i = 0; i < minute.length(); i++)
+  {
+    U0putchar(state[i]);
+  }
+  U0putchar('\n');
+}*/
+
+void outputStateChange(int state)
+{
+  bool century = false;
+  bool h12Flag;
+  bool pmFlag;
+
+  byte year = myRTC.getYear();
+  byte month = myRTC.getMonth(century);
+  byte date = myRTC.getDate();
+  byte hour = myRTC.getHour(h12Flag, pmFlag);
+  byte minute = myRTC.getMinute();
+  byte second = myRTC.getSecond();
+
+  //print time stamp
+  Serial.print(year, DEC);
+  Serial.print("-");
+  Serial.print(month, DEC);
+  Serial.print("-");
+  Serial.print(date, DEC);
+  Serial.print(" ");
+  Serial.print(hour, DEC); //24-hr
+  Serial.print(":");
+  Serial.print(minute, DEC);
+  Serial.print(":");
+  Serial.println(second, DEC);
+  
+  //print state
+  U0putchar("System State: ");
+  if (state == DISABLED)
+  {
+    U0putchar("DISABLED\n");
+  }
+  if (state == IDLE)
+  {
+    U0putchar("IDLE\n");
+  }
+  if (state == RUNNING)
+  {
+    U0putchar("RUNNING\n");
+  }
+  if (state == ERROR)
+  {
+    U0putchar("ERROR\n");
+  }
 }
 
 void myDelay(unsigned int seconds)
