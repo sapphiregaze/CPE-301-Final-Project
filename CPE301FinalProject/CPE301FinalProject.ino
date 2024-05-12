@@ -41,7 +41,7 @@ DS3231 myRTC;
 volatile unsigned char *port_b = (unsigned char *)0x25;
 volatile unsigned char *ddr_b = (unsigned char *)0x24;
 
-// Fan motor: controlled by XX
+// Fan motor: controlled by digital pin 4 (PG5)
 // Start (reset) button: controlled by digital pin 3 (PE5)
 // Stop button: controlled by digital pin 2 (PE4)
 volatile unsigned char *port_e = (unsigned char *)0x2E;
@@ -112,8 +112,7 @@ void setup()
   // FALLING for when the pin goes from high to low.
 
   // Setup fan motor DDR
-  // *ddr_e |= 0x20; // set pins PE5 as output
-  // *ddr_g |= 0x20; // set pins PG5 as output
+  *ddr_a |= 0x04; // set PA2 as output
 
   // Setup button DDR
   *ddr_e &= 0xCF; // set PE4 and PE5 as input
@@ -241,14 +240,18 @@ void ventMotor(int direction)
 
 void toggleFanState(int state)
 {
-  // Send signal from digital pin 3 (PE5) to DC motor IN1
-  *port_e |= state * (0x01 << 5);
-  fanMotorState = state;
-
-  if (fanMotorState)
+  // Send signal from digital pin 24 (PA2) to DC motor IN1
+  if (state == 0) {
+    *port_a |= 0x04;
+    fanMotorState = 1;
     outputStateChange("Fan motor: STATE = ON \n");
-  else
+  }
+
+  else if (state == 1) {
+    *port_a &= 0xFB;
+    fanMotorState = 0;
     outputStateChange("Fan motor: STATE = OFF \n");
+  }    
 }
 
 int getWaterLevel()
