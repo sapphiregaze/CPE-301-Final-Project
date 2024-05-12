@@ -105,7 +105,7 @@ void setup()
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
-  // attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); //attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
+  //attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); //attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
   // For attachInterrupt:
   // LOW to trigger the interrupt whenever the pin is low,
   // CHANGE to trigger the interrupt whenever the pin changes value
@@ -366,16 +366,16 @@ void setup_timer_regs()
 // timer overflow ISR
 //  ISR(TIMER1_OVF_vect)
 //  {
-//    // Stop the Timer
+//    //Stop the Timer
 //    *myTCCR1B &= 0xF8;
-//    // Load the Count
+//    //Load the Count
 //    *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
-//    // Start the Timer
+//    //Start the Timer
 //    *myTCCR1B |= 0b00000001;
-//    // if it's not the STOP amount
+//    //if it's not the STOP amount
 //    if(currentTicks != 65535)
 //    {
-//      // XOR to toggle PB6
+//      //XOR to toggle PB6
 //      *portB ^= 0x40;
 //    }
 //  }
@@ -464,20 +464,20 @@ void outputStateChange(int state)
   byte minute = myRTC.getMinute();
   byte second = myRTC.getSecond();
 
-  // print time stamp
+  //print time stamp
   Serial.print(year, DEC);
   Serial.print("-");
   Serial.print(month, DEC);
   Serial.print("-");
   Serial.print(date, DEC);
   Serial.print(" ");
-  Serial.print(hour, DEC); // 24-hr
+  Serial.print(hour, DEC); //24-hr
   Serial.print(":");
   Serial.print(minute, DEC);
   Serial.print(":");
   Serial.println(second, DEC);
   
-  // print state
+  //print state
   U0putchar("System State: ");
   if (state == DISABLED)
   {
