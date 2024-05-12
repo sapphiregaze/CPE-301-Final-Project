@@ -424,23 +424,23 @@ void outputStateChange(String state)
   Serial.print("Minute: ");
   Serial.println(minute);
 
-  // for (int i = 0; i < date.length(); i++)
-  // {
-  //   U0putchar(state[i]);
-  // }
-  // U0putchar(' ');
+  for (int i = 0; i < date.length(); i++)
+  {
+    U0putchar(state[i]);
+  }
+  U0putchar(' ');
 
-  // for (int i = 0; i < hour.length(); i++)
-  // {
-  //   U0putchar(state[i]);
-  // }
-  // U0putchar(':');
+  for (int i = 0; i < hour.length(); i++)
+  {
+    U0putchar(state[i]);
+  }
+  U0putchar(':');
 
-  // for (int i = 0; i < minute.length(); i++)
-  // {
-  //   U0putchar(state[i]);
-  // }
-  // U0putchar('\n');
+  for (int i = 0; i < minute.length(); i++)
+  {
+    U0putchar(state[i]);
+  }
+  U0putchar('\n');
 }
 
 void myDelay(unsigned int seconds)
