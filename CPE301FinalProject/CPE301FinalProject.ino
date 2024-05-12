@@ -8,6 +8,7 @@
 #include <Stepper.h>
 // #include <Clock.h>
 #include <DS3231.h>
+#include <Wire.h>
 
 // macros
 #define RDA 0x80
@@ -399,7 +400,7 @@ void U0putchar(unsigned char U0pdata)
   *myUDR0 = U0pdata;
 }
 
-void outputStateChange(String state)
+/*void outputStateChange(String state)
 {
   // for (int i = 0; i < state.length(); i++)
   // {
@@ -437,6 +438,41 @@ void outputStateChange(String state)
   U0putchar(':');
 
   for (int i = 0; i < minute.length(); i++)
+  {
+    U0putchar(state[i]);
+  }
+  U0putchar('\n');
+}*/
+
+void outputStateChange(String state)
+{
+  bool century = false;
+  bool h12Flag;
+  bool pmFlag;
+
+  byte year = myRTC.getYear();
+  byte month = myRTC.getMonth(century);
+  byte date = myRTC.getDate();
+  byte hour = myRTC.getHour(h12Flag, pmFlag);
+  byte minute = myRTC.getMinute();
+  byte second = myRTC.getSecond();
+
+  //print time stamp
+  Serial.print(year, DEC);
+  Serial.print("-");
+  Serial.print(month, DEC);
+  Serial.print("-");
+  Serial.print(date, DEC);
+  Serial.print(" ");
+  Serial.print(hour, DEC); //24-hr
+  Serial.print(":");
+  Serial.print(minute, DEC);
+  Serial.print(":");
+  Serial.println(second, DEC);
+  
+  //print state
+  U0putchar('System State: ');
+  for (int i = 0; i < state.length(); i++)
   {
     U0putchar(state[i]);
   }
