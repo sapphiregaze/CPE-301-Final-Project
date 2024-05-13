@@ -118,7 +118,7 @@ void setup()
   // Setup stepper motor DDR
   *ddr_a &= 0xFE; // set PA0 as input
 
-  attachInterrupt(digitalPinToInterrupt(3), myISR, RISING); //attach ISR to start button current set to call when pressed
+  attachInterrupt(digitalPinToInterrupt(3), myISR, RISING); // attach ISR to start button current set to call when pressed
 
   // set the time (the RTC module will keep track even when the Arduino is powered off)
   myRTC.setYear(24);
@@ -133,7 +133,7 @@ void loop()
 {
   // put your main code here, to run repeatedly:
 
-  bool stopButtonPressed  = (*pin_e & 0x10) > 0; // PE4
+  bool stopButtonPressed = (*pin_e & 0x10) > 0;    // PE4
   bool stepperButtonPressed = (*pin_a & 0x01) > 0; // PA0
 
   if (printISRChange)
@@ -149,7 +149,8 @@ void loop()
   }
 
   // ADJUST VENT
-  if (stepperButtonPressed & status != ERROR) {
+  if (stepperButtonPressed & status != ERROR)
+  {
     myPrintLn("Vent position +180 degrees");
     ventMotor(1);
   }
@@ -160,13 +161,14 @@ void loop()
     unsigned long currentMillis = millis();
     bool minutePassed = currentMillis - previousMillis >= (0 * 1000);
 
-    if (minutePassed) {
+    if (minutePassed)
+    {
       previousMillis = currentMillis;        // reset minute timer
       temperature = dht11.readTemperature(); // read the temperature
       humidity = dht11.readHumidity();       // read the humidity
     }
 
-    getWaterLevel();                       // get the water level
+    getWaterLevel(); // get the water level
 
     // if water level is too low
     if (waterLevel < 2)
@@ -193,16 +195,19 @@ void loop()
 
 void changeToState(int state)
 {
-  if (status != state) {
+  if (status != state)
+  {
     status = state;
     statusLED(state);
     outputStateChange(state);
 
-    if (state == RUNNING) {
+    if (state == RUNNING)
+    {
       toggleFanState(RUNNING);
     }
 
-    else {
+    else
+    {
       toggleFanState(DISABLED);
     }
   }
@@ -266,7 +271,7 @@ void toggleFanState(int state)
   else if (state == 0)
   {
     *port_a &= 0xFB;
-  }    
+  }
 }
 
 int getWaterLevel()
@@ -371,9 +376,9 @@ void setup_timer_regs()
 // start button ISR
 void myISR()
 {
-  getWaterLevel(); 
+  getWaterLevel();
   if ((status == ERROR || status == DISABLED) && waterLevel >= 2)
-  {                // should do nothing in other states
+  { // should do nothing in other states
     status = IDLE;
     statusLED(IDLE);
     printISRChange = true;
@@ -420,7 +425,7 @@ void outputStateChange(int state)
   byte minute = myRTC.getMinute();
   byte second = myRTC.getSecond();
 
-  //print time stamp
+  // print time stamp
   myPrint("Time: ");
   myPrint(String(year));
   myPrint("-");
@@ -428,13 +433,13 @@ void outputStateChange(int state)
   myPrint("-");
   myPrint(String(date));
   myPrint(" ");
-  myPrint(String(hour)); //24-hr
+  myPrint(String(hour)); // 24-hr
   myPrint(":");
   myPrint(String(minute));
   myPrint(":");
   myPrintLn(String(second));
-  
-  //print state
+
+  // print state
   myPrint("System State: ");
   if (state == DISABLED)
   {
@@ -455,13 +460,16 @@ void outputStateChange(int state)
   myPrintLn("");
 }
 
-void myPrint(String s) {
-  for (int i = 0; i < s.length(); i++) {
+void myPrint(String s)
+{
+  for (int i = 0; i < s.length(); i++)
+  {
     U0putchar(s[i]);
   }
 }
 
-void myPrintLn(String s) {
+void myPrintLn(String s)
+{
   myPrint(s);
   U0putchar('\n');
 }
