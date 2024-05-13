@@ -1,13 +1,14 @@
-# CPE301 Final Project
+# Water Swamp Cooler System
 
-Final lab project for CPE 301 Spring 2024
+Final lab project for CPE 301 Spring 2024.
+See a video of the operation here: https://www.youtube.com/watch?feature=shared&v=ANGQSHI6QOw
 
 ## Necessary libraries
 
 - LiquidCrystal
 - DHT11 by Dhruba Saha
 - Stepper
-- DS3231
+- DS3231 by Andrew Wickert
 
 ## Team
 
