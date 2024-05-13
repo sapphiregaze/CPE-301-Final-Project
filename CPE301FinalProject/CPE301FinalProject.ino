@@ -30,7 +30,6 @@ const int RS = 8, EN = 9, D4 = 10, D5 = 11, D6 = 12, D7 = 13;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
 
 bool stepperMotorState = false;
-bool fanMotorState = false;
 
 // set up DHT pins
 DHT11 dht11(7); // DHT sensor connected to digital pin 7
@@ -74,6 +73,7 @@ unsigned long previousMillis = 0;
 
 // initialize LED status
 volatile int status = DISABLED;
+volatile bool printISRChange = false;
 
 // UART Pointers
 volatile unsigned char *myUCSR0A = 0x00C0;
@@ -136,6 +136,12 @@ void loop()
   bool stopButtonPressed  = (*pin_e & 0x10) > 0; // PE4
   bool stepperButtonPressed = (*pin_a & 0x01) > 0; // PA0
 
+  if (printISRChange)
+  {
+    outputStateChange(IDLE);
+    printISRChange = false;
+  }
+
   // STOP BUTTON
   if (stopButtonPressed && status != DISABLED)
   {
@@ -144,7 +150,7 @@ void loop()
 
   // ADJUST VENT
   if (stepperButtonPressed & status != ERROR) {
-    myPrint("Vent position +180 degrees \n");
+    myPrintLn("Vent position +180 degrees");
     ventMotor(1);
   }
 
@@ -177,7 +183,7 @@ void loop()
 
     else if (temperature < TEMPERATURE_THRESHOLD)
     {
-      changeToState(DISABLED);
+      changeToState(IDLE);
     }
   }
 
@@ -254,14 +260,10 @@ void toggleFanState(int state)
   // Send signal from digital pin 24 (PA2) to DC motor IN1
   if (state == 1) {
     *port_a |= 0x04;
-    fanMotorState = 1;
-    outputStateChange("Fan motor: STATE = ON \n");
   }
 
   else if (state == 0) {
     *port_a &= 0xFB;
-    fanMotorState = 0;
-    outputStateChange("Fan motor: STATE = OFF \n");
   }    
 }
 
@@ -372,6 +374,7 @@ void myISR()
   {                // should do nothing in other states
     status = IDLE;
     statusLED(IDLE);
+    printISRChange = true;
   }
 }
 
@@ -417,18 +420,17 @@ void outputStateChange(int state)
 
   //print time stamp
   myPrint("Time: ");
-  Serial.print(year, DEC);
-  Serial.print("-");
-  Serial.print(month, DEC);
-  Serial.print("-");
-  Serial.print(date, DEC);
-  Serial.print(" ");
-  Serial.print(hour, DEC); //24-hr
-  Serial.print(":");
-  Serial.print(minute, DEC);
-  Serial.print(":");
-  Serial.println(second, DEC);
-  myPrintLn(" ");
+  myPrint(String(year));
+  myPrint("-");
+  myPrint(String(month));
+  myPrint("-");
+  myPrint(String(date));
+  myPrint(" ");
+  myPrint(String(hour)); //24-hr
+  myPrint(":");
+  myPrint(String(minute));
+  myPrint(":");
+  myPrintLn(String(second));
   
   //print state
   myPrint("System State: ");
@@ -448,6 +450,7 @@ void outputStateChange(int state)
   {
     myPrintLn("ERROR");
   }
+  myPrintLn("");
 }
 
 void myPrint(String s) {
