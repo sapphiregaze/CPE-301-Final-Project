@@ -31,6 +31,7 @@ LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
 
 bool stepperMotorState = false;
 bool fanMotorState = false;
+bool startButtonState = false;
 
 // set up DHT pins
 DHT11 dht11(7); // DHT sensor connected to digital pin 7
@@ -49,14 +50,13 @@ volatile unsigned char *port_e = (unsigned char *)0x2E;
 volatile unsigned char *ddr_e = (unsigned char *)0x2D;
 volatile unsigned char *pin_e = (unsigned char *)0x2C;
 
-volatile unsigned char* port_g = (unsigned char*) 0x34;
-volatile unsigned char* ddr_g = (unsigned char*) 0x3D;
+volatile unsigned char *port_g = (unsigned char *)0x34;
+volatile unsigned char *ddr_g = (unsigned char *)0x3D;
 
 // Digital pin 22 (PA0) used for stepper motor input
-volatile unsigned char* port_a = (unsigned char*) 0x22;
-volatile unsigned char* ddr_a = (unsigned char*) 0x21;
-volatile unsigned char* pin_a = (unsigned char*) 0x20;
-
+volatile unsigned char *port_a = (unsigned char *)0x22;
+volatile unsigned char *ddr_a = (unsigned char *)0x21;
+volatile unsigned char *pin_a = (unsigned char *)0x20;
 
 // set up motor
 const int stepsPerRevolution = 1024; // 180 degree rotation
@@ -105,12 +105,12 @@ void setup()
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
-  //attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); //attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
-  // For attachInterrupt:
-  // LOW to trigger the interrupt whenever the pin is low,
-  // CHANGE to trigger the interrupt whenever the pin changes value
-  // RISING to trigger when the pin goes from low to high,
-  // FALLING for when the pin goes from high to low.
+  attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); // attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
+  //  For attachInterrupt:
+  //  LOW to trigger the interrupt whenever the pin is low,
+  //  CHANGE to trigger the interrupt whenever the pin changes value
+  //  RISING to trigger when the pin goes from low to high,
+  //  FALLING for when the pin goes from high to low.
 
   // Setup fan motor DDR
   *ddr_a |= 0x04; // set PA2 as output
@@ -125,7 +125,7 @@ void setup()
   myRTC.setYear(24);
   myRTC.setMonth(5);
   myRTC.setDate(12);
-  myRTC.setHour(17); //hour in 24 hour format (17 = 5pm)
+  myRTC.setHour(17); // hour in 24 hour format (17 = 5pm)
   myRTC.setMinute(17);
   myRTC.setSecond(0);
 }
@@ -134,8 +134,8 @@ void loop()
 {
   // put your main code here, to run repeatedly:
 
-  bool startButtonPressed = (*pin_e & 0x20) > 0; // PE5
-  bool stopButtonPressed  = (*pin_e & 0x10) > 0; // PE4
+  bool startButtonPressed = (*pin_e & 0x20) > 0;   // PE5
+  bool stopButtonPressed = (*pin_e & 0x10) > 0;    // PE4
   bool stepperButtonPressed = (*pin_a & 0x01) > 0; // PA0
 
   // STOP BUTTON
@@ -148,13 +148,14 @@ void loop()
   if (startButtonPressed)
   {
     if (status == ERROR || status == DISABLED)
-    {                // should do nothing in other states
+    { // should do nothing in other states
       changeToState(IDLE);
     }
   }
 
   // ADJUST VENT
-  if (stepperButtonPressed & status != ERROR) {
+  if (stepperButtonPressed & status != ERROR)
+  {
     ventMotor(1);
   }
 
@@ -194,11 +195,13 @@ void changeToState(int state)
   statusLED(state);
   outputStateChange(state);
 
-  if (state == RUNNING) {
+  if (state == RUNNING)
+  {
     toggleFanState(RUNNING);
   }
 
-  else {
+  else
+  {
     toggleFanState(DISABLED);
   }
 }
@@ -223,8 +226,8 @@ void lcdDisplay()
     lcd.print(humidity);
     lcd.print("%");
 
-    //delay(10); // delay for 1 minute
-    // REPLACE WITH MILLIS() AT SOME POINT
+    // delay(10); // delay for 1 minute
+    //  REPLACE WITH MILLIS() AT SOME POINT
   }
 
   else if (status == ERROR)
@@ -246,8 +249,8 @@ void lcdDisplay()
 
 void ventMotor(int direction)
 {
-    myStepper.setSpeed(stepperSpeed); // arbitrary speed in rpm
-    myStepper.step(stepsPerRevolution * direction);
+  myStepper.setSpeed(stepperSpeed); // arbitrary speed in rpm
+  myStepper.step(stepsPerRevolution * direction);
 
   // a positive stepsPerRevolution is clockwise and negative is counter clockwise
   // essentially have direction be 1 for clockwise and -1 for counterclockwise
@@ -256,17 +259,19 @@ void ventMotor(int direction)
 void toggleFanState(int state)
 {
   // Send signal from digital pin 24 (PA2) to DC motor IN1
-  if (state == 1) {
+  if (state == 1)
+  {
     *port_a |= 0x04;
     fanMotorState = 1;
     outputStateChange("Fan motor: STATE = ON \n");
   }
 
-  else if (state == 0) {
+  else if (state == 0)
+  {
     *port_a &= 0xFB;
     fanMotorState = 0;
     outputStateChange("Fan motor: STATE = OFF \n");
-  }    
+  }
 }
 
 int getWaterLevel()
@@ -373,22 +378,11 @@ void setup_timer_regs()
   // enable the TOV interrupt
   *myTIMSK1 |= 0x01;
 }
-// timer overflow ISR
-//  ISR(TIMER1_OVF_vect)
-//  {
-//    //Stop the Timer
-//    *myTCCR1B &= 0xF8;
-//    //Load the Count
-//    *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
-//    //Start the Timer
-//    *myTCCR1B |= 0b00000001;
-//    //if it's not the STOP amount
-//    if(currentTicks != 65535)
-//    {
-//      //XOR to toggle PB6
-//      *portB ^= 0x40;
-//    }
-//  }
+
+void ISR()
+{
+  startButtonState = true;
+}
 
 // UART functions
 void U0Init(int U0baud)
@@ -474,20 +468,20 @@ void outputStateChange(int state)
   byte minute = myRTC.getMinute();
   byte second = myRTC.getSecond();
 
-  //print time stamp
+  // print time stamp
   Serial.print(year, DEC);
   Serial.print("-");
   Serial.print(month, DEC);
   Serial.print("-");
   Serial.print(date, DEC);
   Serial.print(" ");
-  Serial.print(hour, DEC); //24-hr
+  Serial.print(hour, DEC); // 24-hr
   Serial.print(":");
   Serial.print(minute, DEC);
   Serial.print(":");
   Serial.println(second, DEC);
-  
-  //print state
+
+  // print state
   U0putchar("System State: ");
   if (state == DISABLED)
   {
