@@ -105,7 +105,7 @@ void setup()
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
-  attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); // attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
+  attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); // attach ISR to start button current set to call when pressed
   //  For attachInterrupt:
   //  LOW to trigger the interrupt whenever the pin is low,
   //  CHANGE to trigger the interrupt whenever the pin changes value
@@ -381,7 +381,17 @@ void setup_timer_regs()
 
 void ISR()
 {
-  startButtonState = true;
+  startButtonState = !startButtonState;
+  U0putchar("Start button is pressed");
+
+  if (startButtonState)
+  {
+    U0putchar("Start button state is now true");
+  }
+  else
+  {
+    U0putchar("Start button is now false");
+  }
 }
 
 // UART functions
