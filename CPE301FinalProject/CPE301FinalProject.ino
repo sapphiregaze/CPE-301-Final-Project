@@ -120,6 +120,14 @@ void setup()
 
   // Setup stepper motor DDR
   *ddr_a &= 0xFE; // set PA0 as input
+
+  // set the time (the RTC module will keep track even when the Arduino is powered off)
+  myRTC.setYear(24);
+  myRTC.setMonth(5);
+  myRTC.setDate(12);
+  myRTC.setHour(17); //hour in 24 hour format (17 = 5pm)
+  myRTC.setMinute(17);
+  myRTC.setSecond(0);
 }
 
 void loop()
