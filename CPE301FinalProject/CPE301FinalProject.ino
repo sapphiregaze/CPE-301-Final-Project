@@ -30,6 +30,8 @@ const int RS = 8, EN = 9, D4 = 10, D5 = 11, D6 = 12, D7 = 13;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
 
 bool stepperMotorState = false;
+bool fanMotorState = false;
+bool startButtonState = false;
 
 // set up DHT pins
 DHT11 dht11(7); // DHT sensor connected to digital pin 7
@@ -48,14 +50,13 @@ volatile unsigned char *port_e = (unsigned char *)0x2E;
 volatile unsigned char *ddr_e = (unsigned char *)0x2D;
 volatile unsigned char *pin_e = (unsigned char *)0x2C;
 
-volatile unsigned char* port_g = (unsigned char*) 0x34;
-volatile unsigned char* ddr_g = (unsigned char*) 0x3D;
+volatile unsigned char *port_g = (unsigned char *)0x34;
+volatile unsigned char *ddr_g = (unsigned char *)0x3D;
 
 // Digital pin 22 (PA0) used for stepper motor input
-volatile unsigned char* port_a = (unsigned char*) 0x22;
-volatile unsigned char* ddr_a = (unsigned char*) 0x21;
-volatile unsigned char* pin_a = (unsigned char*) 0x20;
-
+volatile unsigned char *port_a = (unsigned char *)0x22;
+volatile unsigned char *ddr_a = (unsigned char *)0x21;
+volatile unsigned char *pin_a = (unsigned char *)0x20;
 
 // set up motor
 const int stepsPerRevolution = 1024; // 180 degree rotation
@@ -124,7 +125,7 @@ void setup()
   myRTC.setYear(24);
   myRTC.setMonth(5);
   myRTC.setDate(12);
-  myRTC.setHour(17); //hour in 24 hour format (17 = 5pm)
+  myRTC.setHour(17); // hour in 24 hour format (17 = 5pm)
   myRTC.setMinute(17);
   myRTC.setSecond(0);
 }
@@ -248,8 +249,8 @@ void lcdDisplay()
 
 void ventMotor(int direction)
 {
-    myStepper.setSpeed(stepperSpeed); // arbitrary speed in rpm
-    myStepper.step(stepsPerRevolution * direction);
+  myStepper.setSpeed(stepperSpeed); // arbitrary speed in rpm
+  myStepper.step(stepsPerRevolution * direction);
 
   // a positive stepsPerRevolution is clockwise and negative is counter clockwise
   // essentially have direction be 1 for clockwise and -1 for counterclockwise
@@ -258,11 +259,13 @@ void ventMotor(int direction)
 void toggleFanState(int state)
 {
   // Send signal from digital pin 24 (PA2) to DC motor IN1
-  if (state == 1) {
+  if (state == 1)
+  {
     *port_a |= 0x04;
   }
 
-  else if (state == 0) {
+  else if (state == 0)
+  {
     *port_a &= 0xFB;
   }    
 }
