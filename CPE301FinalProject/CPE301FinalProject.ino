@@ -23,7 +23,7 @@
 #define WATER_LEVEL_MIN 0
 #define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
 
-#define TEMPERATURE_THRESHOLD 0 // integer temperature at which to turn on fan
+#define TEMPERATURE_THRESHOLD 26 // integer temperature at which to turn on fan
 
 // set up LCD pins
 const int RS = 8, EN = 9, D4 = 10, D5 = 11, D6 = 12, D7 = 13;
@@ -70,9 +70,10 @@ int waterLevel = 0;
 
 int temperature = 0;
 int humidity = 0;
+unsigned long previousMillis = 0;
 
 // initialize LED status
-int status = DISABLED;
+volatile int status = DISABLED;
 
 // UART Pointers
 volatile unsigned char *myUCSR0A = 0x00C0;
@@ -105,12 +106,8 @@ void setup()
   status = DISABLED; // system is disabled, yellow LED should be on
   statusLED(status);
 
-  //attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); //attach ISR to start button current set to call when pressed but idk if thats what it is supposed to do
   // For attachInterrupt:
-  // LOW to trigger the interrupt whenever the pin is low,
-  // CHANGE to trigger the interrupt whenever the pin changes value
-  // RISING to trigger when the pin goes from low to high,
-  // FALLING for when the pin goes from high to low.
+  // RISING to trigger when the pin goes from low to high
 
   // Setup fan motor DDR
   *ddr_a |= 0x04; // set PA2 as output
@@ -120,6 +117,8 @@ void setup()
 
   // Setup stepper motor DDR
   *ddr_a &= 0xFE; // set PA0 as input
+
+  attachInterrupt(digitalPinToInterrupt(3), myISR, RISING); //attach ISR to start button current set to call when pressed
 
   // set the time (the RTC module will keep track even when the Arduino is powered off)
   myRTC.setYear(24);
@@ -134,7 +133,6 @@ void loop()
 {
   // put your main code here, to run repeatedly:
 
-  bool startButtonPressed = (*pin_e & 0x20) > 0; // PE5
   bool stopButtonPressed  = (*pin_e & 0x10) > 0; // PE4
   bool stepperButtonPressed = (*pin_a & 0x01) > 0; // PA0
 
@@ -144,25 +142,24 @@ void loop()
     changeToState(DISABLED); // system disabled, yellow LED should be on
   }
 
-  // START BUTTON
-  if (startButtonPressed)
-  {
-    if (status == ERROR || status == DISABLED)
-    {                // should do nothing in other states
-      changeToState(IDLE);
-    }
-  }
-
   // ADJUST VENT
   if (stepperButtonPressed & status != ERROR) {
+    myPrint("Vent position +180 degrees \n");
     ventMotor(1);
   }
 
   // MAIN SYSTEM LOOP
   if (status == RUNNING || status == IDLE)
   {
-    temperature = dht11.readTemperature(); // read the temperature
-    humidity = dht11.readHumidity();       // read the humidity
+    unsigned long currentMillis = millis();
+    bool minutePassed = currentMillis - previousMillis >= (0 * 1000);
+
+    if (minutePassed) {
+      previousMillis = currentMillis;        // reset minute timer
+      temperature = dht11.readTemperature(); // read the temperature
+      humidity = dht11.readHumidity();       // read the humidity
+    }
+
     getWaterLevel();                       // get the water level
 
     // if water level is too low
@@ -173,33 +170,35 @@ void loop()
     }
 
     // check temperature and restart fan motor accordingly
-    else if (temperature > TEMPERATURE_THRESHOLD && fanMotorState == DISABLED)
+    else if (temperature > TEMPERATURE_THRESHOLD)
     {
       changeToState(RUNNING);
     }
 
-    else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING)
+    else if (temperature < TEMPERATURE_THRESHOLD)
     {
       changeToState(DISABLED);
     }
   }
 
   lcdDisplay(); // display the temperature and humidity or error
-  delay(1000);
+  myDelay(1);
 }
 
 void changeToState(int state)
 {
-  status = state;
-  statusLED(state);
-  outputStateChange(state);
+  if (status != state) {
+    status = state;
+    statusLED(state);
+    outputStateChange(state);
 
-  if (state == RUNNING) {
-    toggleFanState(RUNNING);
-  }
+    if (state == RUNNING) {
+      toggleFanState(RUNNING);
+    }
 
-  else {
-    toggleFanState(DISABLED);
+    else {
+      toggleFanState(DISABLED);
+    }
   }
 }
 
@@ -222,9 +221,6 @@ void lcdDisplay()
     lcd.print("Humidity: ");
     lcd.print(humidity);
     lcd.print("%");
-
-    //delay(10); // delay for 1 minute
-    // REPLACE WITH MILLIS() AT SOME POINT
   }
 
   else if (status == ERROR)
@@ -274,12 +270,6 @@ int getWaterLevel()
   // this function reads the water sensor
   waterValue = adc_read(0);                                             // mask
   waterLevel = map(waterValue, WATER_LEVEL_MIN, WATER_LEVEL_MAX, 0, 4); // 4 levels also need to setup max macro
-
-  // DEBUG
-  Serial.print("Water value / level: ");
-  Serial.print(waterValue);
-  Serial.print("/");
-  Serial.println(waterLevel);
 }
 
 void statusLED(int statusLight)
@@ -373,22 +363,17 @@ void setup_timer_regs()
   // enable the TOV interrupt
   *myTIMSK1 |= 0x01;
 }
-// timer overflow ISR
-//  ISR(TIMER1_OVF_vect)
-//  {
-//    //Stop the Timer
-//    *myTCCR1B &= 0xF8;
-//    //Load the Count
-//    *myTCNT1 =  (unsigned int) (65535 -  (unsigned long) (currentTicks));
-//    //Start the Timer
-//    *myTCCR1B |= 0b00000001;
-//    //if it's not the STOP amount
-//    if(currentTicks != 65535)
-//    {
-//      //XOR to toggle PB6
-//      *portB ^= 0x40;
-//    }
-//  }
+
+// start button ISR
+void myISR()
+{
+  getWaterLevel(); 
+  if ((status == ERROR || status == DISABLED) && waterLevel >= 2)
+  {                // should do nothing in other states
+    status = IDLE;
+    statusLED(IDLE);
+  }
+}
 
 // UART functions
 void U0Init(int U0baud)
@@ -417,50 +402,6 @@ void U0putchar(unsigned char U0pdata)
   *myUDR0 = U0pdata;
 }
 
-/*void outputStateChange(String state)
-{
-  // for (int i = 0; i < state.length(); i++)
-  // {
-  //   U0putchar(state[i]);
-  // }
-  // U0putchar(' ');
-
-  bool is24hour = true;
-  bool isPMtime = false;
-
-  byte date = myRTC.getDate();
-  byte hour = myRTC.getHour(is24hour, isPMtime);
-  byte minute = myRTC.getMinute();
-
-  // DEBUG
-  Serial.print("State: ");
-  Serial.println(status);
-  Serial.print("Date: ");
-  Serial.println(date);
-  Serial.print("Hour: ");
-  Serial.println(hour);
-  Serial.print("Minute: ");
-  Serial.println(minute);
-
-  for (int i = 0; i < date.length(); i++)
-  {
-    U0putchar(state[i]);
-  }
-  U0putchar(' ');
-
-  for (int i = 0; i < hour.length(); i++)
-  {
-    U0putchar(state[i]);
-  }
-  U0putchar(':');
-
-  for (int i = 0; i < minute.length(); i++)
-  {
-    U0putchar(state[i]);
-  }
-  U0putchar('\n');
-}*/
-
 void outputStateChange(int state)
 {
   bool century = false;
@@ -475,6 +416,7 @@ void outputStateChange(int state)
   byte second = myRTC.getSecond();
 
   //print time stamp
+  myPrint("Time: ");
   Serial.print(year, DEC);
   Serial.print("-");
   Serial.print(month, DEC);
@@ -486,25 +428,37 @@ void outputStateChange(int state)
   Serial.print(minute, DEC);
   Serial.print(":");
   Serial.println(second, DEC);
+  myPrintLn(" ");
   
   //print state
-  U0putchar("System State: ");
+  myPrint("System State: ");
   if (state == DISABLED)
   {
-    U0putchar("DISABLED\n");
+    myPrintLn("DISABLED");
   }
   if (state == IDLE)
   {
-    U0putchar("IDLE\n");
+    myPrintLn("IDLE");
   }
   if (state == RUNNING)
   {
-    U0putchar("RUNNING\n");
+    myPrintLn("RUNNING");
   }
   if (state == ERROR)
   {
-    U0putchar("ERROR\n");
+    myPrintLn("ERROR");
   }
+}
+
+void myPrint(String s) {
+  for (int i = 0; i < s.length(); i++) {
+    U0putchar(s[i]);
+  }
+}
+
+void myPrintLn(String s) {
+  myPrint(s);
+  U0putchar('\n');
 }
 
 void myDelay(unsigned int seconds)
