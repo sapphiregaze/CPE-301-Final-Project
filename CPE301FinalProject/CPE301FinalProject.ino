@@ -106,6 +106,7 @@ void setup()
   statusLED(status);
 
   attachInterrupt(digitalPinToInterrupt(3), ISR, RISING); // attach ISR to start button current set to call when pressed
+  attachInterrupt(digitalPinToInterrupt(3), ISR, FALLING);
   //  For attachInterrupt:
   //  LOW to trigger the interrupt whenever the pin is low,
   //  CHANGE to trigger the interrupt whenever the pin changes value
