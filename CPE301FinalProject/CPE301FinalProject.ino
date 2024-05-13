@@ -23,10 +23,10 @@
 #define WATER_LEVEL_MIN 0
 #define WATER_LEVEL_MAX 521 // TEMP, need to setup based on max value during water sensor calibration
 
-#define TEMPERATURE_THRESHOLD 240 // integer temperature at which to turn on fan
+#define TEMPERATURE_THRESHOLD 0 // integer temperature at which to turn on fan
 
 // set up LCD pins
-const int RS = 13, EN = 12, D4 = 11, D5 = 10, D6 = 9, D7 = 8;
+const int RS = 8, EN = 9, D4 = 10, D5 = 11, D6 = 12, D7 = 13;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
 
 bool stepperMotorState = false;
@@ -133,9 +133,7 @@ void loop()
   // STOP BUTTON
   if (stopButtonPressed && status != DISABLED)
   {
-    status = DISABLED; // system disabled, yellow LED should be on
-    statusLED(status);
-    toggleFanState(DISABLED);
+    changeToState(DISABLED); // system disabled, yellow LED should be on
   }
 
   // START BUTTON
@@ -143,9 +141,7 @@ void loop()
   {
     if (status == ERROR || status == DISABLED)
     {                // should do nothing in other states
-      status = IDLE; // system idle, green LED should be
-      statusLED(status);
-      outputStateChange(status); // should output IDLE
+      changeToState(IDLE);
     }
   }
 
@@ -164,33 +160,39 @@ void loop()
     // if water level is too low
     if (waterLevel < 2)
     {
-      status = ERROR;
-      statusLED(status);
-      toggleFanState(DISABLED);
-      outputStateChange(status); //should output ERROR
+      changeToState(ERROR);
       // ISR interrupt error
     }
 
     // check temperature and restart fan motor accordingly
     else if (temperature > TEMPERATURE_THRESHOLD && fanMotorState == DISABLED)
     {
-      status = RUNNING;
-      statusLED(status);
-      toggleFanState(RUNNING);
-      outputStateChange(status); //should output RUNNING
+      changeToState(RUNNING);
     }
 
     else if (temperature < TEMPERATURE_THRESHOLD && fanMotorState == RUNNING)
     {
-      status = DISABLED;
-      statusLED(status);
-      toggleFanState(DISABLED);
-      outputStateChange(status); //should output DISABLED
+      changeToState(DISABLED);
     }
   }
 
   lcdDisplay(); // display the temperature and humidity or error
   delay(1000);
+}
+
+void changeToState(int state)
+{
+  status = state;
+  statusLED(state);
+  outputStateChange(state);
+
+  if (state == RUNNING) {
+    toggleFanState(RUNNING);
+  }
+
+  else {
+    toggleFanState(DISABLED);
+  }
 }
 
 void lcdDisplay()
@@ -213,7 +215,7 @@ void lcdDisplay()
     lcd.print(humidity);
     lcd.print("%");
 
-    delay(10); // delay for 1 minute
+    //delay(10); // delay for 1 minute
     // REPLACE WITH MILLIS() AT SOME POINT
   }
 
@@ -246,13 +248,13 @@ void ventMotor(int direction)
 void toggleFanState(int state)
 {
   // Send signal from digital pin 24 (PA2) to DC motor IN1
-  if (state == 0) {
+  if (state == 1) {
     *port_a |= 0x04;
     fanMotorState = 1;
     outputStateChange("Fan motor: STATE = ON \n");
   }
 
-  else if (state == 1) {
+  else if (state == 0) {
     *port_a &= 0xFB;
     fanMotorState = 0;
     outputStateChange("Fan motor: STATE = OFF \n");
