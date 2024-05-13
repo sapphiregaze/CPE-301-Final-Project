@@ -6,7 +6,6 @@
 #include <LiquidCrystal.h>
 #include <DHT11.h>
 #include <Stepper.h>
-// #include <Clock.h>
 #include <DS3231.h>
 #include <Wire.h>
 
